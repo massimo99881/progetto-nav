@@ -1,6 +1,5 @@
 package it.jacopo.nave;
 
-import java.awt.Graphics;
 import java.awt.Polygon;
 
 public class Nav extends GameObject{

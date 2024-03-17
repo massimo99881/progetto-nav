@@ -1,6 +1,5 @@
 package it.jacopo.nave;
 
-import java.awt.Graphics;
 import java.awt.Polygon;
 import java.util.Random;
 
@@ -15,15 +14,15 @@ public class Asteroide extends GameObject{
 	int x1, y1;
 
 	public Asteroide(String nome) {
-		this.nome = nome;
+//		this.nome = nome;
 		x = 0;
 		y = 0;
 		speed = 1.5;//1.5;
 		
-		astPosx = new Random().nextInt(1200);
-		astPosy = new Random().nextInt(800);
-		
-		angolo2 = new Random().nextInt(100);
+//		astPosx = new Random().nextInt(1200);
+//		astPosy = new Random().nextInt(800);
+//		
+//		angolo2 = new Random().nextInt(100);
 		shape = new Polygon();
 		shape.addPoint((int)(centroX), (int)(centroY));
 		

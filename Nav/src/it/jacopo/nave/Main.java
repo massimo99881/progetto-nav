@@ -1,5 +1,6 @@
 package it.jacopo.nave;
 
+
 import javax.swing.JFrame;
 
 public class Main {
