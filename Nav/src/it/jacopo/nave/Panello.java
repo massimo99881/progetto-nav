@@ -2,6 +2,7 @@ package it.jacopo.nave;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Shape;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -16,7 +17,8 @@ import javax.swing.JPanel;
 public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 	Map<String, GameObject> obj = new HashMap<>();
 	Update update;
-	int cx, cy;//thread update per drift astronave
+	Area area1;
+	int cx = 100, cy = 100;//thread update per drift astronave
 	Boolean ThLavora = false;   //flag per vedere se il thread è gia attvio oppure no
 	public Panello() {
 		Nav nave = new Nav("ciao");  //nave principale	
@@ -34,31 +36,52 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 		for(Entry<String, GameObject> e : obj.entrySet()) { //disegno tutto quello che c'è nella mappa
            e.getValue().draw(g2d);
         } 
-		Area area1 = new Area(obj.get("ciao").getTransf()); //restituzione area nav1
-		Area area2 = new Area(obj.get("ciao2").getTransf()); //restituzione area nav2
+		area1 = new Area(obj.get("ciao").getTransf()); //restituzione area nav1
+		//Area area2 = new Area(obj.get("ciao2").getTransf()); //restituzione area nav2
+		
+		Shape circle = createCircle(cx, cy, 20);
+		Area area2 = new Area(circle); // Area del cerchio
 		area1.intersect(area2); //area1 diventa l'intersezione fra le 2
-		g2d.fill(area1);
+		
+		
+     // Se l'area di intersezione non è vuota, ferma la navicella
+        if (!area1.isEmpty()) {
+            obj.get("ciao").speed = Double.MIN_VALUE; // Ferma la navicella
+            ThLavora = true; // Imposta il flag a true
+            area1.reset();
+        }
+
+        // Disegna l'area di intersezione per debugging
+        g2d.fill(area1);
 	}
+	
+	// Metodo per creare un cerchio
+    private Shape createCircle(int x, int y, int r) {
+        return new java.awt.geom.Ellipse2D.Double(x - r, y - r, 2 * r, 2 * r);
+    }
+    
 	@Override
 	public void keyTyped(KeyEvent e) {}
+	
 	@Override
 	public void keyPressed(KeyEvent e) {
-		if(e.getKeyCode() == KeyEvent.VK_SPACE) { //quando premo spazio aumento la velocità
-			if(cx-obj.get("ciao").x < 20 && cx-obj.get("ciao").x > -20 && cy-obj.get("ciao").y < 20 && cy-obj.get("ciao").y > -20) { //se il cursore è vicino ferma 
-				obj.get("ciao").speed = Double.MIN_VALUE;
-				
-			}else {
-				obj.get("ciao").speed += 10;
-			}
-			
-			
-		}
-		if(!ThLavora) {  //se il thread è in funzione non lo eseguo senno esplode tutto
-			update.start();
-			ThLavora = true; //se lo faccio partire lo setto in lavoro
-		}
-		
+	    if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+	        
+	    	if (!area1.isEmpty()) {
+                obj.get("ciao").speed = 0;
+            } else {
+                obj.get("ciao").speed += 10;
+            }
+        	repaint();
+
+	        if (!update.isAlive() ) { // Controlla se il thread è già in esecuzione
+	            update.start();
+	            //ThLavora = true;
+	        }
+	    }
 	}
+
+
 	@Override
 	public void keyReleased(KeyEvent e) {}
 	@Override
