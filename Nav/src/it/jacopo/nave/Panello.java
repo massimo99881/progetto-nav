@@ -19,15 +19,14 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 	Update update;
 	Area area1;
 	int cx = 100, cy = 100;//thread update per drift astronave
-	Boolean ThLavora = false;   //flag per vedere se il thread è gia attvio oppure no
 	public Panello() {
-		Nav nave = new Nav("ciao");  //nave principale	
-		Nav nave2 = new Nav("ciao2"); //nave fantoccio per test collisioni
+		Nav nave = new Nav("navicella1");  //nave principale	
+		Nav nave2 = new Nav("navicella2"); //nave fantoccio per test collisioni
 		nave2.x = 300;
 		nave2.y = 300;
 		obj.put(nave.nome, nave);
 		obj.put(nave2.nome, nave2);
-		update = new Update(obj.get("ciao"), this);
+		update = new Update(obj.get("navicella1"), this);
 	}
 	@Override
 	protected void paintComponent(Graphics g) {
@@ -36,8 +35,8 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 		for(Entry<String, GameObject> e : obj.entrySet()) { //disegno tutto quello che c'è nella mappa
            e.getValue().draw(g2d);
         } 
-		area1 = new Area(obj.get("ciao").getTransf()); //restituzione area nav1
-		//Area area2 = new Area(obj.get("ciao2").getTransf()); //restituzione area nav2
+		area1 = new Area(obj.get("navicella1").getTransf()); //restituzione area nav1
+		//Area area2 = new Area(obj.get("navicella2").getTransf()); //restituzione area nav2
 		
 		Shape circle = createCircle(cx, cy, 20);
 		Area area2 = new Area(circle); // Area del cerchio
@@ -46,8 +45,7 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 		
      // Se l'area di intersezione non è vuota, ferma la navicella
         if (!area1.isEmpty()) {
-            obj.get("ciao").speed = Double.MIN_VALUE; // Ferma la navicella
-            ThLavora = true; // Imposta il flag a true
+            obj.get("navicella1").speed = Double.MIN_VALUE; // Ferma la navicella
             area1.reset();
         }
 
@@ -68,9 +66,9 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 	    if (e.getKeyCode() == KeyEvent.VK_SPACE) {
 	        
 	    	if (!area1.isEmpty()) {
-                obj.get("ciao").speed = 0;
+                obj.get("navicella1").speed = Double.MIN_VALUE;
             } else {
-                obj.get("ciao").speed += 10;
+                obj.get("navicella1").speed += 50;
             }
         	repaint();
 
@@ -94,9 +92,9 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 		cx = e.getX();
 		cy = e.getY();
 		//calcolo in radianti dell'angolo della retta fra cursore e nav
-		obj.get("ciao").angolo = Math.atan2(((e.getY()) - (obj.get("ciao").y)) , ((e.getX()) - (obj.get("ciao").x))); 
+		obj.get("navicella1").angolo = Math.atan2(((e.getY()) - (obj.get("navicella1").y)) , ((e.getX()) - (obj.get("navicella1").x))); 
 		
-		if((int)(obj.get("ciao").speed) == 0) { //se la navicella è in movimento e muovo il cursore non faccio
+		if((int)(obj.get("navicella1").speed) == 0) { //se la navicella è in movimento e muovo il cursore non faccio
 			repaint();							//repaint perchè ci pensa già keyPressed
 		}
 		

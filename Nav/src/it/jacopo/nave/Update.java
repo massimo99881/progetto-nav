@@ -19,6 +19,5 @@ public class Update extends Thread{
 			}
 			pan.repaint();
 		}
-		pan.ThLavora = false;
 	}
 }
