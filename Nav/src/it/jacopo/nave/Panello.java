@@ -49,7 +49,32 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 		
 		
 		update = new Update(obj.get("navicella1"), this);
+		
+		startAsteroidMovement();
 	}
+	
+	// Metodo per avviare il thread per l'aggiornamento dell'asteroide
+    private void startAsteroidMovement() {
+        Thread asteroidMovementThread = new Thread(() -> {
+            while (true) {
+                // Aggiorna il movimento dell'asteroide
+                obj.get("asteroide1").updateMovement();
+
+                // Aggiorna la visualizzazione del pannello
+                repaint();
+
+                // Aggiorna ogni 100 millisecondi
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        asteroidMovementThread.start();
+    }
+	
 	@Override
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
@@ -58,6 +83,19 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 	    if (gameStopped) {
 	        return;
 	    }
+	    
+	    
+	    // Aggiorna e disegna gli oggetti del gioco
+        for (Entry<String, GameObject> e : obj.entrySet()) {
+            GameObject gameObject = e.getValue();
+            if (gameObject instanceof Asteroide) {
+                // Se l'oggetto è un asteroide, aggiorna il suo movimento
+                gameObject.updateMovement();
+            }
+            
+            gameObject.draw(g2d);
+        }
+	    //
 
 	    for (Entry<String, GameObject> e : obj.entrySet()) {
 	        e.getValue().draw(g2d);

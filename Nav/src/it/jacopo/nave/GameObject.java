@@ -29,4 +29,9 @@ public class GameObject {
 		at.rotate(angolo);
 		return at.createTransformedShape(shape);
 	}
+
+	void updateMovement() {
+		// TODO Auto-generated method stub
+		
+	}
 }
