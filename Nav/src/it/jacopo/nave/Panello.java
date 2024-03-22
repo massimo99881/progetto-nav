@@ -18,7 +18,7 @@ import javax.swing.JPanel;
 public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 	Map<String, GameObject> obj = new HashMap<>();
 	private boolean isInCollision = false;
-	private boolean gameStopped = false;
+	boolean gameStopped = false;
 
 	Update update;
 	Area area1;
@@ -53,16 +53,15 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 	@Override
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
-		Graphics2D g2d = (Graphics2D)g;
-		
-		if(gameStopped) {
-			update.interrupt();
-			return;
-		}
-		
-		for(Entry<String, GameObject> e : obj.entrySet()) { //disegno tutto quello che c'è nella mappa
-           e.getValue().draw(g2d);
-        } 
+	    Graphics2D g2d = (Graphics2D) g;
+
+	    if (gameStopped) {
+	        return;
+	    }
+
+	    for (Entry<String, GameObject> e : obj.entrySet()) {
+	        e.getValue().draw(g2d);
+	    }
 		area1 = new Area(obj.get("navicella1").getTransf()); //restituzione area nav1
 		//Area area2 = new Area(obj.get("navicella2").getTransf()); //restituzione area nav2
 		
@@ -83,8 +82,21 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
                 area11.intersect(areaAsteroide);
                 if (!area11.isEmpty()) {
                     System.out.println( "Collisione avvenuta! Gioco terminato.");
-                    update.interrupt(); // Interrompe il thread di aggiornamento
+                    //update.interrupt(); // Interrompe il thread di aggiornamento
                     gameStopped = true; // Imposta la variabile di stato per evitare ulteriori azioni
+                    
+                 // Mostra una dialog di avviso
+                    int choice = JOptionPane.showConfirmDialog(this, "Hai perso! Vuoi riavviare il gioco?", "Game Over", JOptionPane.YES_NO_OPTION);
+                    
+                    if (choice == JOptionPane.YES_OPTION) {
+                        // Riavvia il gioco
+                        // Implementa la logica per riavviare il gioco qui, ad esempio reimposta le variabili di stato e inizializza nuovi oggetti
+                    	resetGame();
+                    } else {
+                        // L'utente ha scelto di non riavviare il gioco, esci dall'applicazione o prendi altre azioni di chiusura
+                        // ...
+                    }
+                    
                     return; 
                 }
             }
@@ -92,6 +104,29 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 		
 		
 	}
+	
+	// Metodo per resettare il gioco
+	private void resetGame() {
+	    // Reimposta lo stato del gioco
+	    gameStopped = false;
+
+	    // Imposta una nuova posizione iniziale sicura per la navicella principale
+	    obj.get("navicella1").x = getWidth() - 200; // Imposta la posizione X in un angolo opposto
+	    obj.get("navicella1").y = getHeight() - 200; // Imposta la posizione Y in un angolo opposto
+
+	    // Reimposta la velocità della navicella principale
+	    obj.get("navicella1").speed = 50; // O qualsiasi valore desiderato per la velocità iniziale
+
+	    // Se il thread di aggiornamento non è già in esecuzione, crea un nuovo oggetto Update e avvia il thread
+	    if (!update.isAlive()) {
+	        update = new Update(obj.get("navicella1"), this);
+	        update.start();
+	    }
+
+	    // Potresti anche reimpostare altre variabili di stato o oggetti del gioco qui, se necessario
+	}
+
+
 	
 	// Metodo per creare un cerchio
     private Shape createCircle(int x, int y, int r) {
