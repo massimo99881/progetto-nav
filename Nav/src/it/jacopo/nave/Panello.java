@@ -112,10 +112,10 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 	        obj.get("navicella1").speed = Double.MIN_VALUE; // Ferma la navicella
 	        area1.reset();
 	    }
-	    
-	    Area area11 = new Area(obj.get("navicella1").getTransf());
+
 		for (Entry<String, GameObject> entry : obj.entrySet()) {
             if (entry.getValue() instanceof Asteroide) {
+            	Area area11 = new Area(obj.get("navicella1").getTransf());
                 Area areaAsteroide = new Area(entry.getValue().getTransf());
                 area11.intersect(areaAsteroide);
                 if (!area11.isEmpty()) {
@@ -202,7 +202,7 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 		//calcolo in radianti dell'angolo della retta fra cursore e nav
 		obj.get("navicella1").angolo = Math.atan2(((e.getY()) - (obj.get("navicella1").y)) , ((e.getX()) - (obj.get("navicella1").x))); 
 		
-		if((int)(obj.get("navicella1").speed) == 0) { //se la navicella è in movimento e muovo il cursore non faccio
+		if((int)(obj.get("navicella1").speed) == Double.MIN_VALUE) { //se la navicella è in movimento e muovo il cursore non faccio
 			repaint();							//repaint perchè ci pensa già keyPressed
 		}
 		
