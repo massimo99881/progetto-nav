@@ -34,8 +34,8 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 		obj.put(nave2.nome, nave2);
 		
 		// Inizializza due asteroidi
-        Asteroide asteroide1 = new Asteroide("asteroide1");
-        Asteroide asteroide2 = new Asteroide("asteroide2");
+        Asteroide asteroide1 = new Asteroide("asteroide1","asteroide1.png");
+        Asteroide asteroide2 = new Asteroide("asteroide2","asteroide2.png");
         
      // Inizializza due asteroidi con posizioni iniziali visibili
         asteroide1.x = 100; // Posizione X iniziale per asteroide1
