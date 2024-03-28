@@ -1,9 +1,12 @@
 package it.jacopo.nave;
 
+import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Polygon;
 import java.awt.Shape;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -32,15 +35,17 @@ public class Asteroide extends GameObject {
     	this.name=nome;
     	
     	BufferedImage originalImage = null;
+    	int newWidth = 0;
+    	int newHeight = 0;
     	 // Caricamento dell'immagine
     	try {
             originalImage = ImageIO.read(new File(imagePath));
-            // Calcola le nuove dimensioni dell'immagine riducendola del 60%
-            int newWidth = (int) (originalImage.getWidth(null) * 0.2); // 40% dell'originale
-            int newHeight = (int) (originalImage.getHeight(null) * 0.2); // 40% dell'originale
+            // Calcola le nuove dimensioni dell'immagine riducendola 
+            newWidth = (int) (originalImage.getWidth(null) * 0.2); // 80% dell'originale
+            newHeight = (int) (originalImage.getHeight(null) * 0.2); // 80% dell'originale
             
             // Ridimensiona l'immagine
-            this.image = originalImage.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH);
+            this.image = originalImage.getScaledInstance(newWidth, newHeight, Image.SCALE_FAST);
         } catch (IOException e) {
             e.printStackTrace();
             this.image = null; // Gestisci l'errore impostando l'immagine a null
@@ -50,8 +55,6 @@ public class Asteroide extends GameObject {
         y = 0;
         this.speed = 2.0 + Math.random() * 3.0; // Velocità casuale da 2.0 a 5.0
 
-        
-        
         shape = getPolygonFromImage(toBufferedImage(this.image));
 
         // Imposta una velocità di rotazione casuale
@@ -93,45 +96,67 @@ public class Asteroide extends GameObject {
         return poly;
 	}
 
-	@Override
+    @Override
     void draw(Graphics2D g) {
-    	// Rotazione dell'asteroide
-        angolo += angoloRotazione;
-    	if (this.image != null) {
-            // Disegna l'immagine dell'asteroide
-    		
-            g.drawImage(this.image, (int) x, (int) y, null);
-            shape = getPolygonFromImage(toBufferedImage(this.image));
-            g.drawPolygon(shape);
+        // Controlla che l'immagine non sia null e che il gioco non sia in pausa
+        if (this.image != null /*&& !gameStopped*/) {
+            // Apply transformations to the graphics context to draw the image
+            AffineTransform at = new AffineTransform();
+            at.translate(x, y);
+            at.rotate(angolo);
+            
+            // Draw the asteroid image with the current transformations
+            g.drawImage(this.image, at, null);
+
+            // Set the stroke and color for the polygon outline
+            g.setStroke(new BasicStroke(3));
+            g.setColor(Color.RED);
+            
+            // Now transform the polygon in the same way as the image
+            Shape transformedShape = at.createTransformedShape(shape);
+            
+            // Draw the outline of the polygon
+            g.draw(transformedShape);
         } else {
             // Se l'immagine non è stata caricata, disegna un placeholder
-            // Ad esempio, potresti disegnare un cerchio o usare il poligono già definito
-            super.draw(g); // O disegna il poligono come fallback
+            super.draw(g); // Or draw the base shape as a fallback
         }
-    	
-    	 
     }
+
 
     @Override
     void updateMovement() {
-        // Aggiorna l'angolo di rotazione per far ruotare l'asteroide attorno a se stesso
-        angolo += angoloRotazione;
+        // Constants for asteroid movement
+        final double ACCELERATION_CHANGE = 0.05; // How much the asteroid's speed can change each frame
+        final double ANGLE_CHANGE = Math.PI / 180; // One degree in radians
+        final double MIN_SPEED = 0.5; // Minimum speed of the asteroid
+        final double MAX_SPEED = 2.0; // Maximum speed of the asteroid
 
-        // Aggiunge una variazione casuale alla velocità lineare
-        double deltaSpeed = (new Random().nextDouble() - 0.5) * 0.5; // Variazione casuale da -0.5 a +0.5
-        speed += deltaSpeed;
+        // Add randomness to speed and direction
+        speed += (Math.random() - 0.5) * ACCELERATION_CHANGE; // Random change in speed
+        angolo += (Math.random() - 0.5) * ANGLE_CHANGE; // Random change in direction
 
-        // Limita la velocità minima e massima
-        double minSpeed = 1.0; // Velocità minima
-        double maxSpeed = 5.0; // Velocità massima
-        speed = Math.max(minSpeed, Math.min(maxSpeed, speed));
+        // Ensure that the speed stays within bounds
+        speed = Math.max(MIN_SPEED, Math.min(MAX_SPEED, speed));
 
-        // Aggiorna la posizione dell'asteroide in base alla sua velocità di movimento lineare
+        // Update the position based on the new speed and direction
         x += (int) (speed * Math.cos(angolo));
         y += (int) (speed * Math.sin(angolo));
-        shape = getPolygonFromImage(toBufferedImage(this.image));
-  
+
+        // Update the rotation angle with a small random value to simulate rotation
+        final double MIN_ANGLE_ROTATION = -Math.PI / 360; // -0.5 degrees in radians per frame
+        final double MAX_ANGLE_ROTATION = Math.PI / 360;  // 0.5 degrees in radians per frame
+        angoloRotazione += MIN_ANGLE_ROTATION + (Math.random() * (MAX_ANGLE_ROTATION - MIN_ANGLE_ROTATION));
+
+        // Update the Polygon shape here
+        if (image != null) {
+            BufferedImage bufferedImage = toBufferedImage(image);
+            shape = getPolygonFromImage(bufferedImage);
+        }
     }
+
+
+
 
 }
 

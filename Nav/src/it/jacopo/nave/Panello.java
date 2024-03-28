@@ -85,7 +85,7 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 	    }
 	    
 	    
-	    // Aggiorna e disegna gli oggetti del gioco
+	    // Loop through all GameObjects to update and draw them
         for (Entry<String, GameObject> e : obj.entrySet()) {
             GameObject gameObject = e.getValue();
             if (gameObject instanceof Asteroide) {
@@ -95,7 +95,6 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
             
             gameObject.draw(g2d);
         }
-	    //
 
 	    for (Entry<String, GameObject> e : obj.entrySet()) {
 	        e.getValue().draw(g2d);
