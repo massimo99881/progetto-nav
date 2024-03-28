@@ -38,9 +38,9 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
         Asteroide asteroide2 = new Asteroide("asteroide2","asteroide2.png");
         
      // Inizializza due asteroidi con posizioni iniziali visibili
-        asteroide1.x = 100; // Posizione X iniziale per asteroide1
+        asteroide1.x = -10; // Posizione X iniziale per asteroide1
         asteroide1.y = 100; // Posizione Y iniziale per asteroide1
-        asteroide2.x = 300; // Posizione X iniziale per asteroide2
+        asteroide2.x = -10; // Posizione X iniziale per asteroide2
         asteroide2.y = 300; // Posizione Y iniziale per asteroide2
 
         // Aggiungi asteroidi alla mappa degli oggetti
@@ -161,6 +161,15 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 	    }
 
 	    // Potresti anche reimpostare altre variabili di stato o oggetti del gioco qui, se necessario
+	    for (Entry<String, GameObject> entry : obj.entrySet()) {
+            if (entry.getValue() instanceof Asteroide) {
+            	 Asteroide asteroide = (Asteroide) entry.getValue();
+            	 asteroide.resetPosizione();
+            }
+	       
+	        // La funzione resetPosizione() deve essere definita nella classe Asteroide
+	        // e deve impostare valori iniziali per la posizione, la velocità, l'angolo, ecc.
+	    }
 	}
 
 
