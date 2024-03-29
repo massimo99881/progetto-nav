@@ -5,10 +5,13 @@ import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Area;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -19,6 +22,9 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 	Map<String, GameObject> obj = new HashMap<>();
 	private boolean isInCollision = false;
 	boolean gameStopped = false;
+	ArrayList<Proiettile> proiettili = new ArrayList<>();
+    ArrayList<Asteroide> asteroidi = new ArrayList<>();
+    ArrayList<Esplosione> esplosioni = new ArrayList<>();
 
 	Update update;
 	Area area1;
@@ -32,6 +38,20 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 
 		obj.put(nave.nome, nave);
 		obj.put(nave2.nome, nave2);
+		
+		addMouseListener(new MouseAdapter() {
+	        @Override
+	        public void mouseClicked(MouseEvent e) {
+	            if (e.getButton() == MouseEvent.BUTTON1) {
+	                // Ottiene la navicella principale
+	                Nav nave = (Nav) obj.get("navicella1");
+	                if (nave != null) {
+	                    // Crea un proiettile alla posizione della navicella
+	                    proiettili.add(new Proiettile(nave.x + nave.shape.getBounds().width / 2, nave.y + nave.shape.getBounds().height / 2));
+	                }
+	            }
+	        }
+	    });
 		
 		// Inizializza 5 asteroidi con posizioni iniziali visibili
 	    for (int i = 1; i <= 5; i++) {
@@ -75,12 +95,28 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
 	    Graphics2D g2d = (Graphics2D) g;
+	    aggiornaGioco(); // Aggiorna lo stato del gioco prima di disegnare
 
 	    if (gameStopped) {
 	        return;
 	    }
 	    
-	    
+	 // Disegna i proiettili
+        for (Proiettile proiettile : proiettili) {
+            proiettile.disegna(g2d);
+        }
+        
+     // Disegna le esplosioni
+        Iterator<Esplosione> esplosioneIterator = esplosioni.iterator();
+        while (esplosioneIterator.hasNext()) {
+            Esplosione esplosione = esplosioneIterator.next();
+            if (!esplosione.aggiorna()) {
+                esplosioneIterator.remove();
+            } else {
+                esplosione.disegna(g2d);
+            }
+        }
+        
 	    // Loop through all GameObjects to update and draw them
         for (Entry<String, GameObject> e : obj.entrySet()) {
             GameObject gameObject = e.getValue();
@@ -134,9 +170,54 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
                 }
             }
         }
-		
-		
 	}
+	
+	
+	public void aggiornaGioco() {
+	    // Aggiorna la posizione dei proiettili
+	    Iterator<Proiettile> iterProiettili = proiettili.iterator();
+	    while (iterProiettili.hasNext()) {
+	        Proiettile proiettile = iterProiettili.next();
+	        proiettile.aggiorna();
+	        
+	        // Rimuovi i proiettili che escono dallo schermo
+	        if (proiettile.x < 0 || proiettile.x > getWidth()) {
+	            iterProiettili.remove();
+	            continue;
+	        }
+	    }
+
+	    // Aggiorna la posizione degli asteroidi e controlla le collisioni con i proiettili
+	    Iterator<Asteroide> iterAsteroidi = asteroidi.iterator();
+	    while (iterAsteroidi.hasNext()) {
+	        Asteroide asteroide = iterAsteroidi.next();
+	        asteroide.updateMovement(); // Assicurati che Asteroide abbia questo metodo implementato correttamente
+	        
+	        // Controlla le collisioni con i proiettili
+	        iterProiettili = proiettili.iterator(); // Resetta l'iteratore per i proiettili
+	        while (iterProiettili.hasNext()) {
+	            Proiettile proiettile = iterProiettili.next();
+	            if (asteroide.getTransf().intersects(proiettile.x, proiettile.y, 5, 5)) { // Assumi dimensione proiettile 5x5
+	                iterProiettili.remove(); // Rimuovi il proiettile
+	                iterAsteroidi.remove(); // Rimuovi l'asteroide
+	                
+	                // Aggiungi un'esplosione alla posizione dell'asteroide
+	                esplosioni.add(new Esplosione(asteroide.x, asteroide.y));
+	                break; // Esci dal ciclo dei proiettili se una collisione è avvenuta
+	            }
+	        }
+	    }
+
+	    // Aggiorna le esplosioni
+	    Iterator<Esplosione> iterEsplosioni = esplosioni.iterator();
+	    while (iterEsplosioni.hasNext()) {
+	        Esplosione esplosione = iterEsplosioni.next();
+	        if (!esplosione.aggiorna()) { // Se l'esplosione è finita
+	            iterEsplosioni.remove();
+	        }
+	    }
+	}
+
 	
 	// Metodo per resettare il gioco
 	private void resetGame() {
