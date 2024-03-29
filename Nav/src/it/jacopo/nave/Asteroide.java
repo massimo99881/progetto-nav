@@ -22,6 +22,7 @@ import java.util.Random;
 public class Asteroide extends GameObject {
     Image image;
     double angoloRotazione; // Angolo di rotazione per la rotazione casuale
+    final double ANGLE_BASE ;
 
     public Asteroide(String nome, String imagePath) {
     	this.name=nome;
@@ -42,10 +43,9 @@ public class Asteroide extends GameObject {
             e.printStackTrace();
             this.image = null; // Gestisci l'errore impostando l'immagine a null
         }
-    	
-        x = 0;
-        y = 0;
-        this.speed = 2.0 + Math.random() * 3.0; // Velocità casuale da 2.0 a 5.0
+    	ANGLE_BASE = (Math.random() - 0.5) * 2; // angolo traiettoria
+         
+        this.speed = 2.0 + Math.random() * 4.0; // Velocità casuale da 2.0 a 5.0
 
         shape = getPolygonFromImage(toBufferedImage(this.image));
 
@@ -122,28 +122,26 @@ public class Asteroide extends GameObject {
 
     @Override
     void updateMovement() {
-        final double ACCELERATION_CHANGE = 0.05; // Quanto la velocità dell'asteroide può cambiare ad ogni frame
-        final double ANGLE_CHANGE = Math.PI / 90; // Cambiamento massimo dell'angolo in radianti ad ogni frame
-        final double MIN_SPEED = 0.5; // Velocità minima dell'asteroide
-        final double MAX_SPEED = 2.0; // Velocità massima dell'asteroide
+        final double ACCELERATION_CHANGE = 0.1; // Piccole variazioni nella velocità
+        final double MIN_SPEED = 0.5;
+        final double MAX_SPEED = 2.0;
+         // Direzione base verso destra
+        final double MAX_ANGLE_VARIATION = Math.PI / 18; // Incremento della variazione angolare per una curvatura maggiore
 
-        // Aggiungi una piccola variazione casuale alla velocità
-        speed += (Math.random() - 0.5) * ACCELERATION_CHANGE; 
-        // Assicurati che la velocità rimanga nei limiti
+        // Aggiorna la velocità con una variazione casuale
+        speed += (Math.random() - 0.5) * ACCELERATION_CHANGE;
         speed = Math.max(MIN_SPEED, Math.min(MAX_SPEED, speed));
 
-        // Aggiungi una piccola variazione casuale all'angolo per creare una traiettoria non lineare
-        angolo += (Math.random() - 0.5) * ANGLE_CHANGE; 
+        // Applica una variazione angolare casuale entro un range più ampio per una curvatura maggiore della traiettoria
+        double angleVariation = (Math.random() - 0.5) * 2 * MAX_ANGLE_VARIATION;
+        angolo = ANGLE_BASE + angleVariation;
 
-        // Calcola il nuovo movimento basato sull'angolo aggiornato
-        // Si assume qui che angolo sia l'angolo di direzione dell'asteroide rispetto all'orizzontale,
-        // che determina la sua traiettoria da sinistra verso destra.
-        x += (int) (speed * Math.cos(angolo));
+        // Aggiorna la posizione dell'asteroide basandosi sulla sua velocità e angolo aggiornati
+        x -= (int) (speed * Math.cos(angolo)); // Questo sposterà l'asteroide verso sinistra
         y += (int) (speed * Math.sin(angolo));
 
-        // Aggiornamento della rotazione dell'asteroide, se desiderato
-        // Per esempio, puoi far ruotare l'asteroide attorno al suo asse più lentamente o più velocemente
-        angoloRotazione += Math.PI / 180; // Qui come esempio, l'asteroide ruota di 1 grado per frame
+        // Opcionalmente, aggiorna la rotazione dell'asteroide per effetti visivi
+        angoloRotazione += Math.PI / 180; // Aggiusta a piacimento
     }
 
     

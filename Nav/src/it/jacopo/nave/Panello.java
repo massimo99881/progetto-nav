@@ -33,19 +33,15 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 		obj.put(nave.nome, nave);
 		obj.put(nave2.nome, nave2);
 		
-		// Inizializza due asteroidi
-        Asteroide asteroide1 = new Asteroide("asteroide1","asteroide1.png");
-        Asteroide asteroide2 = new Asteroide("asteroide2","asteroide2.png");
-        
-     // Inizializza due asteroidi con posizioni iniziali visibili
-        asteroide1.x = 100; // Posizione X iniziale per asteroide1
-        asteroide1.y = 100; // Posizione Y iniziale per asteroide1
-        asteroide2.x = 300; // Posizione X iniziale per asteroide2
-        asteroide2.y = 300; // Posizione Y iniziale per asteroide2
+		// Inizializza 5 asteroidi con posizioni iniziali visibili
+	    for (int i = 1; i <= 5; i++) {
+	        Asteroide asteroide = new Asteroide("asteroide" + i, "asteroide" + i + ".png");
+	        asteroide.x = 1110; // Tutti gli asteroidi partono dalla stessa posizione X iniziale
+	        asteroide.y = 100 * i; // Distribuisce gli asteroidi verticalmente
 
-        // Aggiungi asteroidi alla mappa degli oggetti
-        obj.put(asteroide1.name, asteroide1);
-        obj.put(asteroide2.name, asteroide2);
+	        // Aggiungi l'asteroide alla mappa degli oggetti
+	        obj.put(asteroide.name, asteroide);
+	    }
 		
 		
 		update = new Update(obj.get("navicella1"), this);
@@ -148,11 +144,11 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 	    gameStopped = false;
 
 	    // Imposta una nuova posizione iniziale sicura per la navicella principale
-	    obj.get("navicella1").x = getWidth() - 200; // Imposta la posizione X in un angolo opposto
-	    obj.get("navicella1").y = getHeight() - 200; // Imposta la posizione Y in un angolo opposto
+	    obj.get("navicella1").x = 20; // Imposta la posizione X in un angolo opposto
+	    obj.get("navicella1").y = 110; // Imposta la posizione Y in un angolo opposto
 
 	    // Reimposta la velocità della navicella principale
-	    obj.get("navicella1").speed = 50; // O qualsiasi valore desiderato per la velocità iniziale
+	    obj.get("navicella1").speed = 10; // O qualsiasi valore desiderato per la velocità iniziale
 
 	    // Se il thread di aggiornamento non è già in esecuzione, crea un nuovo oggetto Update e avvia il thread
 	    if (!update.isAlive()) {
