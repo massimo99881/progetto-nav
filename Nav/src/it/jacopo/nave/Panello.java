@@ -174,49 +174,51 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 	
 	
 	public void aggiornaGioco() {
-	    // Aggiorna la posizione dei proiettili
+	    // Aggiornamento dei proiettili
 	    Iterator<Proiettile> iterProiettili = proiettili.iterator();
 	    while (iterProiettili.hasNext()) {
 	        Proiettile proiettile = iterProiettili.next();
 	        proiettile.aggiorna();
+
+	        // Ottiene la Shape del proiettile
+	        Shape shapeProiettile = proiettile.getShape();
 	        
 	        // Rimuovi i proiettili che escono dallo schermo
 	        if (proiettile.x < 0 || proiettile.x > getWidth()) {
 	            iterProiettili.remove();
 	            continue;
 	        }
-	    }
-
-	    // Aggiorna la posizione degli asteroidi e controlla le collisioni con i proiettili
-	    Iterator<Asteroide> iterAsteroidi = asteroidi.iterator();
-	    while (iterAsteroidi.hasNext()) {
-	        Asteroide asteroide = iterAsteroidi.next();
-	        asteroide.updateMovement(); // Assicurati che Asteroide abbia questo metodo implementato correttamente
 	        
-	        // Controlla le collisioni con i proiettili
-	        iterProiettili = proiettili.iterator(); // Resetta l'iteratore per i proiettili
-	        while (iterProiettili.hasNext()) {
-	            Proiettile proiettile = iterProiettili.next();
-	            if (asteroide.getTransf().intersects(proiettile.x, proiettile.y, 5, 5)) { // Assumi dimensione proiettile 5x5
-	                iterProiettili.remove(); // Rimuovi il proiettile
-	                iterAsteroidi.remove(); // Rimuovi l'asteroide
+	        Iterator<Entry<String, GameObject>> iterObj = obj.entrySet().iterator();
+	        while (iterObj.hasNext()) {
+	            Entry<String, GameObject> entry = iterObj.next();
+	            GameObject gameObject = entry.getValue();
+	            
+	            if (gameObject instanceof Asteroide) {
+	                Asteroide asteroide = (Asteroide) gameObject;
+	                Area areaAsteroide = new Area(asteroide.getTransf());
+	                Area areaProiettile = new Area(shapeProiettile);
 	                
-	                // Aggiungi un'esplosione alla posizione dell'asteroide
-	                esplosioni.add(new Esplosione(asteroide.x, asteroide.y));
-	                break; // Esci dal ciclo dei proiettili se una collisione è avvenuta
+	                areaAsteroide.intersect(areaProiettile);
+	                if (!areaAsteroide.isEmpty()) {
+	                    // Collisione rilevata, gestisci qui
+	                    iterProiettili.remove(); // Rimuovi il proiettile
+	                    asteroide.colpito(); // Aggiorna lo stato dell'asteroide per il colpo ricevuto
+
+	                    if (asteroide.getColpiSubiti() >= 5) {
+	                        iterObj.remove(); // Rimuovi l'asteroide se è stato distrutto
+	                        System.out.println(asteroide.name + " è stato distrutto"); // Stampa un messaggio in console
+	                    }
+	                    break; // Esci dal ciclo se una collisione è stata trovata
+	                }
 	            }
 	        }
 	    }
 
-	    // Aggiorna le esplosioni
-	    Iterator<Esplosione> iterEsplosioni = esplosioni.iterator();
-	    while (iterEsplosioni.hasNext()) {
-	        Esplosione esplosione = iterEsplosioni.next();
-	        if (!esplosione.aggiorna()) { // Se l'esplosione è finita
-	            iterEsplosioni.remove();
-	        }
-	    }
+	    // Aggiornamento delle esplosioni...
 	}
+
+
 
 	
 	// Metodo per resettare il gioco

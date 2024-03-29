@@ -2,6 +2,8 @@ package it.jacopo.nave;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Shape;
+import java.awt.geom.Ellipse2D;
 
 public class Proiettile {
     double x, y; // Posizione del proiettile
@@ -12,14 +14,18 @@ public class Proiettile {
         this.y = y;
     }
 
-    // Metodo per aggiornare la posizione del proiettile
     void aggiorna() {
         x += velocita;
     }
 
-    // Metodo per disegnare il proiettile
     void disegna(Graphics2D g) {
         g.setColor(Color.BLACK);
         g.fillOval((int)x, (int)y, 5, 5); // Disegna un piccolo cerchio come proiettile
+    }
+    
+    // Metodo che restituisce la Shape del proiettile per il rilevamento delle collisioni
+    public Shape getShape() {
+        // Assumendo che il proiettile sia rappresentato come un cerchio di diametro 5
+        return new Ellipse2D.Double(x, y, 5, 5);
     }
 }

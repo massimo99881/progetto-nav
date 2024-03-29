@@ -23,6 +23,23 @@ public class Asteroide extends GameObject {
     Image image;
     double angoloRotazione; // Angolo di rotazione per la rotazione casuale
     final double ANGLE_BASE ;
+    private int colpiSubiti = 0;
+    
+ // Metodo per gestire l'essere colpiti da un proiettile
+    public void colpito() {
+        colpiSubiti++;
+        System.out.println("Asteroide colpito");
+        // Se l'asteroide viene colpito 5 volte, viene distrutto
+        if (colpiSubiti >= 5) {
+            System.out.println(name + " è stato distrutto");
+            // Qui potresti voler rimuovere l'asteroide dalla lista degli asteroidi nel Panello
+            // Ma questo dovrebbe essere gestito dal metodo di aggiornamento del gioco nella classe Panello
+        }
+    }
+    
+    public int getColpiSubiti() {
+        return colpiSubiti;
+    }
 
     public Asteroide(String nome, String imagePath) {
     	this.name=nome;
