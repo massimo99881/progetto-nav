@@ -20,14 +20,6 @@ import java.awt.Polygon;
 import java.util.Random;
 
 public class Asteroide extends GameObject {
-    int centroX = 0;
-    int centroY = 0;
-    double raggio = new Random().nextInt(20) + 40;
-    int primax = 0;
-    int primay = 0;
-    int npunti = 16;
-    int rand1, rand2;
-    int x1, y1;
     Image image;
     double angoloRotazione; // Angolo di rotazione per la rotazione casuale
 
@@ -58,7 +50,11 @@ public class Asteroide extends GameObject {
         shape = getPolygonFromImage(toBufferedImage(this.image));
 
         // Imposta una velocità di rotazione casuale
-        angoloRotazione = (Math.random() * 2 - 1) * Math.PI / 180; // Rotazione casuale da -1 a 1 grado per frame
+        angoloRotazione = (Math.random() * 2 - 1) * Math.PI / 180;
+        if (Math.random() > 0.5) {
+            angoloRotazione *= -1; // Cambia il verso della rotazione
+        }
+        
     }
     
     private BufferedImage toBufferedImage(Image img) {
@@ -98,65 +94,81 @@ public class Asteroide extends GameObject {
 
     @Override
     void draw(Graphics2D g) {
-        // Controlla che l'immagine non sia null e che il gioco non sia in pausa
-        if (this.image != null /*&& !gameStopped*/) {
-            // Apply transformations to the graphics context to draw the image
+        if (this.image != null /* && !gameStopped */) {
             AffineTransform at = new AffineTransform();
-            at.translate(x, y);
-            at.rotate(angolo);
-            
-            // Draw the asteroid image with the current transformations
-            g.drawImage(this.image, at, null);
+            int imageWidth = this.image.getWidth(null);
+            int imageHeight = this.image.getHeight(null);
+            int imageCenterX = imageWidth / 2;
+            int imageCenterY = imageHeight / 2;
 
-            // Set the stroke and color for the polygon outline
-            g.setStroke(new BasicStroke(3));
-            g.setColor(Color.RED);
+            at.translate(x + imageCenterX, y + imageCenterY);
+            at.rotate(angoloRotazione, 0, 0);
+            at.translate(-imageCenterX, -imageCenterY);
+
+            g.drawImage(this.image, at, null);
             
-            // Now transform the polygon in the same way as the image
-            Shape transformedShape = at.createTransformedShape(shape);
-            
-            // Draw the outline of the polygon
-            g.draw(transformedShape);
+         // Now transform the polygon in the same way as the image
+//            Shape transformedShape = at.createTransformedShape(shape);
+//            g.setStroke(new BasicStroke(3));
+//            g.setColor(Color.RED);
+//            g.draw(transformedShape);
+
+            // Per il contorno, se necessario, applicare lo stesso principio di trasformazione
         } else {
-            // Se l'immagine non è stata caricata, disegna un placeholder
-            super.draw(g); // Or draw the base shape as a fallback
+            super.draw(g);
         }
     }
 
 
     @Override
     void updateMovement() {
-        // Constants for asteroid movement
-        final double ACCELERATION_CHANGE = 0.05; // How much the asteroid's speed can change each frame
-        final double ANGLE_CHANGE = Math.PI / 180; // One degree in radians
-        final double MIN_SPEED = 0.5; // Minimum speed of the asteroid
-        final double MAX_SPEED = 2.0; // Maximum speed of the asteroid
+        final double ACCELERATION_CHANGE = 0.05; // Quanto la velocità dell'asteroide può cambiare ad ogni frame
+        final double ANGLE_CHANGE = Math.PI / 90; // Cambiamento massimo dell'angolo in radianti ad ogni frame
+        final double MIN_SPEED = 0.5; // Velocità minima dell'asteroide
+        final double MAX_SPEED = 2.0; // Velocità massima dell'asteroide
 
-        // Add randomness to speed and direction
-        speed += (Math.random() - 0.5) * ACCELERATION_CHANGE; // Random change in speed
-        angolo += (Math.random() - 0.5) * ANGLE_CHANGE; // Random change in direction
-
-        // Ensure that the speed stays within bounds
+        // Aggiungi una piccola variazione casuale alla velocità
+        speed += (Math.random() - 0.5) * ACCELERATION_CHANGE; 
+        // Assicurati che la velocità rimanga nei limiti
         speed = Math.max(MIN_SPEED, Math.min(MAX_SPEED, speed));
 
-        // Update the position based on the new speed and direction
+        // Aggiungi una piccola variazione casuale all'angolo per creare una traiettoria non lineare
+        angolo += (Math.random() - 0.5) * ANGLE_CHANGE; 
+
+        // Calcola il nuovo movimento basato sull'angolo aggiornato
+        // Si assume qui che angolo sia l'angolo di direzione dell'asteroide rispetto all'orizzontale,
+        // che determina la sua traiettoria da sinistra verso destra.
         x += (int) (speed * Math.cos(angolo));
         y += (int) (speed * Math.sin(angolo));
 
-        // Update the rotation angle with a small random value to simulate rotation
-        final double MIN_ANGLE_ROTATION = -Math.PI / 360; // -0.5 degrees in radians per frame
-        final double MAX_ANGLE_ROTATION = Math.PI / 360;  // 0.5 degrees in radians per frame
-        angoloRotazione += MIN_ANGLE_ROTATION + (Math.random() * (MAX_ANGLE_ROTATION - MIN_ANGLE_ROTATION));
-
-        // Update the Polygon shape here
-        if (image != null) {
-            BufferedImage bufferedImage = toBufferedImage(image);
-            shape = getPolygonFromImage(bufferedImage);
-        }
+        // Aggiornamento della rotazione dell'asteroide, se desiderato
+        // Per esempio, puoi far ruotare l'asteroide attorno al suo asse più lentamente o più velocemente
+        angoloRotazione += Math.PI / 180; // Qui come esempio, l'asteroide ruota di 1 grado per frame
     }
 
+    
+    @Override
+    Shape getTransf() {
+        AffineTransform at = new AffineTransform();
 
+        // Calcola il centro dell'immagine per la rotazione
+        int imageWidth = this.image.getWidth(null);
+        int imageHeight = this.image.getHeight(null);
+        int imageCenterX = imageWidth / 2;
+        int imageCenterY = imageHeight / 2;
 
+        // Prima trasla al centro dello schermo (o alla posizione desiderata)
+        at.translate(x + imageCenterX, y + imageCenterY);
+
+        // Poi ruota attorno al centro dell'immagine
+        at.rotate(angoloRotazione, 0, 0);
+
+        // Trasla indietro in modo che l'angolo in alto a sinistra sia nella posizione corretta
+        at.translate(-imageCenterX, -imageCenterY);
+
+        // Applica la trasformazione alla forma dell'asteroide
+        return at.createTransformedShape(shape);
+    }
 
 }
 
