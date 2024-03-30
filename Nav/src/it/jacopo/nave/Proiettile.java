@@ -20,7 +20,7 @@ public class Proiettile {
     }
 
     void disegna(Graphics2D g) {
-        g.setColor(Color.BLACK);
+        g.setColor(Color.WHITE);
         g.fillOval((int)x, (int)y, 5, 5); // Disegna un piccolo cerchio come proiettile
     }
     

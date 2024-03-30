@@ -2,6 +2,7 @@ package it.jacopo.nave;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.event.ActionEvent;
@@ -12,12 +13,17 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Area;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 
+import javax.imageio.ImageIO;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -27,11 +33,15 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 	private boolean isInCollision = false;
 	boolean gameStopped = false;
 	ArrayList<Proiettile> proiettili = new ArrayList<>();
-    ArrayList<Asteroide> asteroidi = new ArrayList<>();
-    ArrayList<Esplosione> esplosioni = new ArrayList<>();
     private Timer gameTimer;
 	Area area1;
 	int cx = 100, cy = 100;//thread update per drift astronave
+	private Image sfondo;
+	private List<String> nomiAsteroidi = new ArrayList<>();
+	private Timer aggiungiAsteroidiTimer;
+	private int aggiunteEffettuate = 0;
+	private final int MAX_AGGIUNTE = 10;
+
 	
 	public Panello() {
 		Nav nave = new Nav("navicella1");  //nave principale	
@@ -39,6 +49,13 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 		// Posizionamento della seconda navicella in basso a destra
         nave2.x =  100; 
         nave2.y =  100; 
+        
+        try {
+            sfondo = ImageIO.read(new File("sfondo.jpg")); // Aggiusta il percorso secondo necessità
+        } catch (IOException e) {
+            e.printStackTrace();
+            sfondo = null;
+        }
 
 		obj.put(nave.nome, nave);
 		obj.put(nave2.nome, nave2);
@@ -59,10 +76,13 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 		
 		// Inizializza 15 asteroidi con posizioni iniziali visibili
 	    for (int i = 1; i <= 15; i++) {
-	        Asteroide asteroide = new Asteroide("asteroide" + i, "asteroide" + i + ".png");
+	    	String nomeAsteroide = "asteroide" + i;
+	        Asteroide asteroide = new Asteroide(nomeAsteroide, "asteroide" + i + ".png");
 	        asteroide.x = 1110; // Tutti gli asteroidi partono dalla stessa posizione X iniziale
-	        asteroide.y = 100 * i; // Distribuisce gli asteroidi verticalmente
-
+	        Random rand = new Random();
+	        int numeroCasuale = rand.nextInt(441) + 10; // Genera un numero casuale tra 10 (incluso) e 451 (escluso)
+	        asteroide.y = numeroCasuale; // Distribuisce gli asteroidi verticalmente
+	        nomiAsteroidi.add(nomeAsteroide);
 	        // Aggiungi l'asteroide alla mappa degli oggetti
 	        obj.put(asteroide.name, asteroide);
 	    }
@@ -76,12 +96,63 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
             }
         });
         gameTimer.start(); // Avvia il Timer
+        
+     // Nella classe Panello, dopo l'inizializzazione di gameTimer
+        aggiungiAsteroidiTimer = new Timer(20000, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (aggiunteEffettuate < MAX_AGGIUNTE) {
+                    aggiungiAsteroidi();
+                    aggiunteEffettuate++;
+                } else {
+                    aggiungiAsteroidiTimer.stop(); // Ferma il Timer
+                    JOptionPane.showMessageDialog(null, "Hai vinto!", "Complimenti", JOptionPane.INFORMATION_MESSAGE);
+                }
+            }
+        });
+        aggiungiAsteroidiTimer.start();
+
 	}
+	
+	
+	// Metodo per aggiungere un singolo asteroide con aggiornamento per usare nomiAsteroidi
+	private void aggiungiAsteroide() {
+	    Random rand = new Random();
+	    int posizioneYCasuale = rand.nextInt(441) + 10; // Genera una posizione Y casuale
+	    int indiceImmagineCasuale = rand.nextInt(15) + 1; // Genera un indice casuale tra 1 e 15
+
+	    // Genera il nome univoco dell'asteroide basato sul numero di elementi nella lista nomiAsteroidi
+	    String nomeAsteroide = "asteroide" + (nomiAsteroidi.size() + 1);
+	    nomiAsteroidi.add(nomeAsteroide); // Aggiunge il nome alla lista per tenere traccia
+	    
+	    // Crea l'oggetto Asteroide e aggiungilo alla mappa obj
+	    Asteroide asteroide = new Asteroide(nomeAsteroide, "asteroide" + indiceImmagineCasuale + ".png");
+	    asteroide.x = 1110;
+	    asteroide.y = posizioneYCasuale;
+	    obj.put(nomeAsteroide, asteroide);
+	}
+
+	// Metodo aggiungiAsteroidi per aggiungere asteroidi periodicamente
+	private void aggiungiAsteroidi() {
+	    for (int i = 0; i < 10; i++) {
+	        aggiungiAsteroide(); // Aggiunge un singolo asteroide utilizzando il metodo definito sopra
+	    }
+	    // Opzionalmente, puoi aggiungere qui logica aggiuntiva, per esempio per fermare il Timer dopo un certo numero di aggiunte
+	}
+
+
+
 	
 	
 	@Override
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
+		// Controlla se l'immagine di sfondo è stata caricata correttamente
+	    if (sfondo != null) {
+	        // Adatta l'immagine di sfondo per coprire tutto il pannello
+	        g.drawImage(sfondo, 0, 0, getWidth(), getHeight(), this);
+	    }
+		
 	    Graphics2D g2d = (Graphics2D) g;
 
 	    if (gameStopped) {
