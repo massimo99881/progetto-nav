@@ -2,6 +2,7 @@ package it.jacopo.nave;
 
 import java.awt.Graphics2D;
 import java.awt.Polygon;
+import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 
@@ -33,5 +34,9 @@ public class GameObject {
 	void updateMovement() {
 		// TODO Auto-generated method stub
 		
+	}
+	
+	Rectangle getBounds() {
+	    return getTransf().getBounds();
 	}
 }
