@@ -206,10 +206,17 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 
 
 	private void controllaCollisioneNavCursore() {
-		area1 = new Area(obj.get("navicella1").getTransf()); 
-		
+//		Nav navicella1 = (Nav) obj.get("navicella1");
 		Shape circle = createCircle(cx, cy, 20);
 		Area area2 = new Area(circle); // Area del cerchio
+		
+//		if (!navicella1.getBounds().intersects(area2.getBounds())) {
+//			return;
+//		}
+		
+		area1 = new Area(obj.get("navicella1").getTransf()); 
+		
+		
 		area1.intersect(area2); //area1 diventa l'intersezione fra le 2
 		isInCollision = !area1.isEmpty(); // Aggiorna lo stato di intersezione
 	    
@@ -280,27 +287,27 @@ public class Panello extends JPanel implements KeyListener, MouseMotionListener{
 	            if (gameObject instanceof Asteroide) {
 	            	
 	            	 Rectangle boundsAsteroide = gameObject.getBounds(); // Assumendo che Asteroide abbia anche un metodo getBounds
-	                 if (!boundsProiettile.intersects(boundsAsteroide)) {
-	                	 continue;
+	                 if (boundsProiettile.intersects(boundsAsteroide)) {
+	                	Asteroide asteroide = (Asteroide) gameObject;
+	 	                Area areaAsteroide = new Area(asteroide.getTransf());
+	 	                Area areaProiettile = new Area(shapeProiettile);
+	 	                
+	 	                areaAsteroide.intersect(areaProiettile);
+	 	                if (!areaAsteroide.isEmpty()) {
+	 	                    // Collisione rilevata, gestisci qui
+	 	                    iterProiettili.remove(); // Rimuovi il proiettile
+	 	                    asteroide.colpito(); // Aggiorna lo stato dell'asteroide per il colpo ricevuto
+
+	 	                    if (asteroide.getColpiSubiti() >= 5) {
+	 	                        iterObj.remove(); // Rimuovi l'asteroide se è stato distrutto
+	 	                        System.out.println(asteroide.name + " è stato distrutto"); // Stampa un messaggio in console
+	 	                    }
+	 	                    break; // Esci dal ciclo se una collisione è stata trovata
+	 	                }
 	                 }
 	            	
 	            	
-	                Asteroide asteroide = (Asteroide) gameObject;
-	                Area areaAsteroide = new Area(asteroide.getTransf());
-	                Area areaProiettile = new Area(shapeProiettile);
 	                
-	                areaAsteroide.intersect(areaProiettile);
-	                if (!areaAsteroide.isEmpty()) {
-	                    // Collisione rilevata, gestisci qui
-	                    iterProiettili.remove(); // Rimuovi il proiettile
-	                    asteroide.colpito(); // Aggiorna lo stato dell'asteroide per il colpo ricevuto
-
-	                    if (asteroide.getColpiSubiti() >= 5) {
-	                        iterObj.remove(); // Rimuovi l'asteroide se è stato distrutto
-	                        System.out.println(asteroide.name + " è stato distrutto"); // Stampa un messaggio in console
-	                    }
-	                    break; // Esci dal ciclo se una collisione è stata trovata
-	                }
 	            }
 	        }
 	    }

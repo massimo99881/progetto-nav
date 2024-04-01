@@ -64,7 +64,7 @@ public class Asteroide extends GameObject {
          
         this.speed = 2.0 + Math.random() * 4.0; // Velocità casuale da 2.0 a 5.0
 
-        shape = getPolygonFromImage(toBufferedImage(this.image));
+        shape = Util.getPolygonFromImage(Util.toBufferedImage(this.image));
 
         // Imposta una velocità di rotazione casuale
         angoloRotazione = (Math.random() * 2 - 1) * Math.PI / 180;
@@ -73,41 +73,6 @@ public class Asteroide extends GameObject {
         }
         
     }
-    
-    private BufferedImage toBufferedImage(Image img) {
-        if (img instanceof BufferedImage) {
-            return (BufferedImage) img;
-        }
-
-        // Crea un buffered image con trasparenza
-        BufferedImage bimage = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-
-        // Disegna l'immagine su buffered image
-        Graphics2D bGr = bimage.createGraphics();
-        bGr.drawImage(img, 0, 0, null);
-        
-        bGr.dispose();
-
-        // Restituisce il buffered image
-        return bimage;
-    }
-    
-    private Polygon getPolygonFromImage(BufferedImage img) {
-        int width = img.getWidth();
-        int height = img.getHeight();
-
-        Polygon poly = new Polygon();
-
-        // Scansione dei pixel per individuare quelli non trasparenti e aggiungere i loro vertici al poligono
-        for (int y = 0; y < height; y+=2) {
-            for (int x = 0; x < width; x+=2) {
-                if ((img.getRGB(x, y) >> 24) != 0x00) { // Se il pixel non è trasparente
-                    poly.addPoint(x, y);
-                }
-            }
-        }
-        return poly;
-	}
 
     @Override
     void draw(Graphics2D g) {
