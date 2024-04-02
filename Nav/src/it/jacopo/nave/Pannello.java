@@ -30,9 +30,16 @@ import javax.swing.Timer;
 
 public class Pannello extends JPanel implements KeyListener, MouseMotionListener{
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 5629029799881632075L;
 	private ProiettilePool proiettilePool = new ProiettilePool();
 	private int sfondoX = 0;
 	private final int VELOCITA_SFONDO = -1; // Sposta lo sfondo di 1 pixel a ogni tick del timer verso sinistra
+	
+	public static int width;
+	public static int height;
 	
 	Map<String, GameObject> obj = new HashMap<>();
 	private boolean isInCollision = false;
@@ -45,7 +52,20 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	private List<String> nomiAsteroidi = new ArrayList<>();
 	private Timer aggiungiAsteroidiTimer;
 	private int aggiunteEffettuate = 0;
+	private boolean staSparando = false;
+	private Timer timerSparo;
 	
+	private void spara() {
+	    if (staSparando) {
+	        Nav nave = (Nav) obj.get("navicella1");
+	        if (nave != null) {
+	            double startX = nave.x + 30 * Math.cos(nave.angolo);
+	            double startY = nave.y + 30 * Math.sin(nave.angolo);
+	            Proiettile proiettile = proiettilePool.getProiettile(startX, startY, nave.angolo);
+	            proiettili.add(proiettile);
+	        }
+	    }
+	}
 	
 	public Pannello() {
 		Nav nave = new Nav("navicella1");  //nave principale	
@@ -68,25 +88,34 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 			@Override
 			public void mouseClicked(MouseEvent e) {
 			    if (e.getButton() == MouseEvent.BUTTON1) {
-			        Nav nave = (Nav) obj.get("navicella1");
-			        if (nave != null) {
-			            // Calcola la posizione iniziale del proiettile sulla punta della navicella
-			            double startX = nave.x + 30 * Math.cos(nave.angolo); // 30 è la lunghezza dalla base alla punta della navicella
-			            double startY = nave.y + 30 * Math.sin(nave.angolo);
-			            
-			         // Ottiene un proiettile dal pool invece di crearne uno nuovo
-			            Proiettile proiettile = proiettilePool.getProiettile(startX, startY, nave.angolo);
-			            proiettili.add(proiettile);
-			        }
+			    	spara(); 
 			    }
 			}
 	    });
+		addMouseListener(new MouseAdapter() {
+		    @Override
+		    public void mousePressed(MouseEvent e) {
+		        if (e.getButton() == MouseEvent.BUTTON1) {
+		            staSparando = true;
+		            spara(); // Metodo per sparare
+		        }
+		    }
+
+		    @Override
+		    public void mouseReleased(MouseEvent e) {
+		        if (e.getButton() == MouseEvent.BUTTON1) {
+		            staSparando = false;
+		        }
+		    }
+		});
+
 		
 		// Inizializza 15 asteroidi con posizioni iniziali visibili
 	    for (int i = 1; i <= Conf.asteroid_number; i++) {
 	    	String nomeAsteroide = "asteroide" + i;
 	        Asteroide asteroide = new Asteroide(nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png");
-	        asteroide.x = Conf.FRAME_WIDTH-5; // Tutti gli asteroidi partono dalla stessa posizione X iniziale
+	        //TODO fix 
+	        asteroide.x = 1200-5; // Tutti gli asteroidi partono dalla stessa posizione X iniziale
 	        Random rand = new Random();
 	        int numeroCasuale = rand.nextInt(441) + 10; // Genera un numero casuale tra 10 (incluso) e 451 (escluso)
 	        asteroide.y = numeroCasuale; // Distribuisce gli asteroidi verticalmente
@@ -119,7 +148,18 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
             }
         });
         aggiungiAsteroidiTimer.start();
-
+        this.width = this.getWidth();
+        this.height = this.getHeight();
+        
+        timerSparo = new Timer(100, new ActionListener() { // Imposta un intervallo appropriato per la frequenza di sparo
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (staSparando) {
+                    spara();
+                }
+            }
+        });
+        timerSparo.start();
 	}
 	
 	// Metodo per aggiungere un singolo asteroide con aggiornamento per usare nomiAsteroidi
@@ -150,6 +190,9 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	@Override
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
+		this.width = this.getWidth();
+        this.height = this.getHeight();
+        
 		// Controlla se l'immagine di sfondo è stata caricata correttamente
 		if (sfondo != null) {
 	        // Disegna la prima copia dello sfondo
@@ -176,17 +219,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
         for (Proiettile proiettile : proiettili) {
             proiettile.disegna(g2d);
         }
-        
-     // Disegna le esplosioni
-//        Iterator<Esplosione> esplosioneIterator = esplosioni.iterator();
-//        while (esplosioneIterator.hasNext()) {
-//            Esplosione esplosione = esplosioneIterator.next();
-//            if (!esplosione.aggiorna()) {
-//                esplosioneIterator.remove();
-//            } else {
-//                esplosione.disegna(g2d);
-//            }
-//        }
         
 		controllaCollisioneNavCursore();
 
@@ -289,8 +321,9 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	                	
 	                	// Prima verifica basata sulla distanza
 	                    double distanza = Math.sqrt(Math.pow(asteroide.getX() - proiettile.getX(), 2) + Math.pow(asteroide.getY() - proiettile.getY(), 2));
-	                    if (distanza > 130) {
-	                        // Se la distanza è maggiore di 30 px, salta la verifica dettagliata e continua con il prossimo asteroide
+	                    //TODO fix
+	                    if (distanza > 150) {
+	                        // Se la distanza è maggiore , salta la verifica dettagliata e continua con il prossimo asteroide
 	                        continue;
 	                    }
 	                	

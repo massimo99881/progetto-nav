@@ -13,15 +13,8 @@ public class GameObject {
 	double speed;
 	double angolo;
 	int x, y;
-	public int getX() {
-        return x;
-    }
-
-    // Getter per y
-    public int getY() {
-        return y;
-    }
-	protected int raggio; // Raggio dell'oggetto
+	
+	protected int raggio; 
 	
 	void draw(Graphics2D g) {
 		AffineTransform at = new AffineTransform();
@@ -54,5 +47,10 @@ public class GameObject {
 	public static double calcolaDistanza(int x1, int y1, int x2, int y2) {
 	    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
 	}
-
+	public int getX() {
+        return x;
+    }
+    public int getY() {
+        return y;
+    }
 }

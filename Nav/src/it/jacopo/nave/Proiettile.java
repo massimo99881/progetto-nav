@@ -31,10 +31,18 @@ public class Proiettile  {
         y += velocita * Math.sin(angolo);
     }
 
+    //ti assicuri che dopo la chiamata a disegna della classe Proiettile, il colore utilizzato per 
+    //disegnare gli altri oggetti sul pannello (come la Nav) non sia influenzato dal colore impostato per i proiettili.
     void disegna(Graphics2D g) {
-        g.setColor(Color.WHITE);
-        g.fillOval((int)x, (int)y, 5, 5); // Disegna un piccolo cerchio come proiettile
+        Color originalColor = g.getColor(); // Memorizza il colore originale
+        try {
+            g.setColor(Color.WHITE);
+            g.fillOval((int)x, (int)y, 5, 5); // Disegna un piccolo cerchio come proiettile
+        } finally {
+            g.setColor(originalColor); // Reimposta il colore originale
+        }
     }
+
     
     // Metodo che restituisce la Shape del proiettile per il rilevamento delle collisioni
     public Shape getShape() {
@@ -52,6 +60,5 @@ public class Proiettile  {
         this.x = x;
         this.y = y;
         this.angolo = angolo;
-        // Reimposta altre proprietà necessarie
     }
 }

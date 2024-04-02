@@ -1,11 +1,8 @@
 package it.jacopo.nave;
 
-import java.awt.BasicStroke;
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Polygon;
-import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -56,10 +53,9 @@ public class Nav extends GameObject{
 	
 	@Override
 	void draw(Graphics2D g) {
-		g.setColor(Color.WHITE);
-	    
+		//g.setColor(Color.WHITE);
 	    // Imposta lo spessore del contorno
-	    g.setStroke(new BasicStroke(3));
+	    //g.setStroke(new BasicStroke(3));
 	    
 	    if(speed <= Double.MIN_VALUE) 
 	    	imageToDraw = navImageSpenta; 
@@ -82,10 +78,11 @@ public class Nav extends GameObject{
 	    // Disegna l'immagine con la trasformazione applicata
 	    g.drawImage(imageToDraw, at, null);
 	    
-	    AffineTransform at2 = new AffineTransform();
-	    at2.translate(x, y);
-		at2.rotate(angolo);
-	    g.draw(at2.createTransformedShape(shape));
+	    //Per debug: shape a forma di triangolo
+//	    AffineTransform at2 = new AffineTransform();
+//	    at2.translate(x, y);
+//		at2.rotate(angolo);
+//	    g.draw(at2.createTransformedShape(shape));
 	}
 	
 }

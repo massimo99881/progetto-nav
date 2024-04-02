@@ -12,11 +12,15 @@ public class Main {
 	    Asteroide.precaricaImmagini();
 		
 		JFrame frame = new JFrame();
+		
+		int FRAME_WIDTH = 1200;
+		int FRAME_HEIGHT = 800;
+		
 		frame.setDefaultCloseOperation(frame.EXIT_ON_CLOSE);
-		frame.setBounds(200, 200, Conf.FRAME_WIDTH, Conf.FRAME_HEIGHT);
+		frame.setBounds(200, 200, FRAME_WIDTH, FRAME_HEIGHT);
 		
 		Pannello pan = new Pannello();
-		pan.setBounds(0, 0, Conf.FRAME_WIDTH, Conf.FRAME_HEIGHT);
+		pan.setBounds(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
 		frame.add(pan);
 		pan.addKeyListener(pan);
 		pan.addMouseMotionListener(pan);

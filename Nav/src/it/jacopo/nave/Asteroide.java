@@ -1,14 +1,10 @@
 package it.jacopo.nave;
 
 import java.awt.AlphaComposite;
-import java.awt.BasicStroke;
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Image;
-import java.awt.Polygon;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.GeneralPath;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -17,10 +13,6 @@ import java.util.Map;
 import java.util.Random;
 
 import javax.imageio.ImageIO;
-
-import java.awt.Graphics2D;
-import java.awt.Polygon;
-import java.util.Random;
 
 public class Asteroide extends GameObject {
     Image image;
@@ -39,12 +31,8 @@ public class Asteroide extends GameObject {
     	if(opacita>=0) {
     		opacita -= 0.1; // Riduci del 20% per ogni colpo
     	}
-    	
-        
 //    	if (colpiSubiti >= 5) {
-//             
 //            System.out.println(name + " è stato distrutto");
-//            
 //        }
          
     }
@@ -65,24 +53,22 @@ public class Asteroide extends GameObject {
     private static void caricaImmagine(String path) {
         // Verifica se l'immagine è già stata caricata nella cache
         if (!imageCache.containsKey(path)) {
-            
-            	try {
-            		Random rand = new Random();
-                    BufferedImage originalImage = ImageIO.read(new File(path));
-                    double scaleFactor = !path.contains("asteroide1.png") ? 0.2 + (0.45 - 0.2) * rand.nextDouble() : 0.2;
-                    int newWidth = (int) (originalImage.getWidth() * scaleFactor);
-                    int newHeight = (int) (originalImage.getHeight() * scaleFactor);
-                    AsteroideCache ac = new AsteroideCache(originalImage.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH));
-                   
-                    imageCache.put(path, ac);
-                } 
-            	catch (IOException e) {
-                    e.printStackTrace();
-                }
-            	catch (Exception e) {
-                    System.err.println("Errore nel caricamento dell'immagine da: " + path);
-                    e.printStackTrace();
-                }
+        	try {
+        		Random rand = new Random();
+                BufferedImage originalImage = ImageIO.read(new File(path));
+                double scaleFactor = !path.contains("asteroide1.png") ? 0.2 + (0.45 - 0.2) * rand.nextDouble() : 0.2;
+                int newWidth = (int) (originalImage.getWidth() * scaleFactor);
+                int newHeight = (int) (originalImage.getHeight() * scaleFactor);
+                AsteroideCache ac = new AsteroideCache(originalImage.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH));
+                imageCache.put(path, ac);
+            } 
+        	catch (IOException e) {
+                e.printStackTrace();
+            }
+        	catch (Exception e) {
+                System.err.println("Errore nel caricamento dell'immagine da: " + path);
+                e.printStackTrace();
+            }
         }
     }
 
@@ -116,7 +102,7 @@ public class Asteroide extends GameObject {
         int imageHeight = this.image.getHeight(null);
         
         // Controllo se l'asteroide è dentro i confini dello schermo
-        if (x + imageWidth >= 0 && x <= Conf.FRAME_WIDTH && y + imageHeight >= 0 && y <= Conf.FRAME_HEIGHT) {
+        if (x + imageWidth >= 0 && x <= Pannello.width && y + imageHeight >= 0 && y <= Pannello.height) {
         	if (this.image != null && opacita > 0 /* && !gameStopped */) {
         		
         		// Controlla se la posizione o l'angolo di rotazione sono cambiati
@@ -146,7 +132,7 @@ public class Asteroide extends GameObject {
                 g.drawImage(this.image, cachedTransform, null);
 
                 // Reimposta l'opacità a 1.0 per non influenzare il disegno di altri oggetti
-                g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+                //g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
                 
             } else {
                 super.draw(g);
@@ -154,17 +140,22 @@ public class Asteroide extends GameObject {
         }
     }
 
+    final double ACCELERATION_CHANGE = 0.1; // Piccole variazioni nella velocità
+    final double MIN_SPEED = 0.5;
+    final double MAX_SPEED = 2.0;
 
     @Override
     void updateMovement() {
         
 
         // Aggiorna la velocità con una variazione casuale
-        speed += (Math.random() - 0.5) * Conf.ACCELERATION_CHANGE;
-        speed = Math.max(Conf.MIN_SPEED, Math.min(Conf.MAX_SPEED, speed));
+        speed += (Math.random() - 0.5) * ACCELERATION_CHANGE;
+        speed = Math.max(MIN_SPEED, Math.min(MAX_SPEED, speed));
 
         // Applica una variazione angolare casuale entro un range più ampio per una curvatura maggiore della traiettoria
-        double angleVariation = (Math.random() - 0.5) * 2 * Conf.MAX_ANGLE_VARIATION;
+        double MAX_ANGLE_VARIATION = Math.PI / 18; 
+        // Incremento della variazione angolare per una curvatura maggiore
+        double angleVariation = (Math.random() - 0.5) * 2 * MAX_ANGLE_VARIATION;
         angolo = ANGLE_BASE + angleVariation;
 
         // Aggiorna la posizione dell'asteroide basandosi sulla sua velocità e angolo aggiornati
