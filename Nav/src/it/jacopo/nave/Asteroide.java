@@ -39,11 +39,11 @@ public class Asteroide extends GameObject {
     	}
     	
         
-    	if (colpiSubiti >= 5) {
-            // L'asteroide è completamente "dissolto", gestisci la rimozione
-            System.out.println(name + " è stato distrutto");
-            
-        }
+//    	if (colpiSubiti >= 5) {
+//             
+//            System.out.println(name + " è stato distrutto");
+//            
+//        }
          
     }
     
@@ -105,24 +105,33 @@ public class Asteroide extends GameObject {
 
     @Override
     void draw(Graphics2D g) {
-        if (this.image != null /* && !gameStopped */) {
-        	float safeOpacity = Math.max(0, Math.min(opacita, 1.0f));
-        	g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, safeOpacity));
-            AffineTransform at = new AffineTransform();
-            int imageWidth = this.image.getWidth(null);
-            int imageHeight = this.image.getHeight(null);
-            int imageCenterX = imageWidth / 2;
-            int imageCenterY = imageHeight / 2;
+    	if (opacita <= 0) {
+            return; // Non disegnare l'asteroide se è completamente trasparente
+        }
+    	// Calcola il rettangolo di bounding dell'asteroide
+        int imageWidth = this.image.getWidth(null);
+        int imageHeight = this.image.getHeight(null);
+        
+        // Controllo se l'asteroide è dentro i confini dello schermo
+        if (x + imageWidth >= 0 && x <= Conf.FRAME_WIDTH && y + imageHeight >= 0 && y <= Conf.FRAME_HEIGHT) {
+        	if (this.image != null && opacita > 0 /* && !gameStopped */) {
+            	float safeOpacity = Math.max(0, Math.min(opacita, 1.0f));
+            	g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, safeOpacity));
+                AffineTransform at = new AffineTransform();
+                
+                int imageCenterX = imageWidth / 2;
+                int imageCenterY = imageHeight / 2;
 
-            at.translate(x + imageCenterX, y + imageCenterY);
-            at.rotate(angoloRotazione, 0, 0);
-            at.translate(-imageCenterX, -imageCenterY);
+                at.translate(x + imageCenterX, y + imageCenterY);
+                at.rotate(angoloRotazione, 0, 0);
+                at.translate(-imageCenterX, -imageCenterY);
 
-            g.drawImage(this.image, at, null);
-            //g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
-            
-        } else {
-            super.draw(g);
+                g.drawImage(this.image, at, null);
+                //g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+                
+            } else {
+                super.draw(g);
+            }
         }
     }
 
