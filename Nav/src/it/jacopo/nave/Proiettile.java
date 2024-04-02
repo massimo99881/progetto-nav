@@ -15,7 +15,7 @@ public class Proiettile {
         this.x = x;
         this.y = y;
         this.angolo = angolo;
-        this.velocita = 5; // Potresti voler utilizzare una velocità costante o basata sulla velocità della navicella
+        this.velocita = 7; // Potresti voler utilizzare una velocità costante o basata sulla velocità della navicella
     }
 
     void aggiorna() {
@@ -38,5 +38,12 @@ public class Proiettile {
     public Rectangle getBounds() {
         // La dimensione del proiettile è 5x5, quindi il rettangolo avrà le stesse dimensioni
         return new Rectangle((int)x, (int)y, 5, 5);
+    }
+    
+    public void reset(double x, double y, double angolo) {
+        this.x = x;
+        this.y = y;
+        this.angolo = angolo;
+        // Reimposta altre proprietà necessarie
     }
 }

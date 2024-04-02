@@ -30,7 +30,7 @@ import javax.swing.Timer;
 
 public class Pannello extends JPanel implements KeyListener, MouseMotionListener{
 	
-	
+	private ProiettilePool proiettilePool = new ProiettilePool();
 	private int sfondoX = 0;
 	private final int VELOCITA_SFONDO = -1; // Sposta lo sfondo di 1 pixel a ogni tick del timer verso sinistra
 	
@@ -74,8 +74,9 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 			            double startX = nave.x + 30 * Math.cos(nave.angolo); // 30 è la lunghezza dalla base alla punta della navicella
 			            double startY = nave.y + 30 * Math.sin(nave.angolo);
 			            
-			            // Crea un proiettile alla posizione calcolata e con l'angolo della navicella
-			            proiettili.add(new Proiettile(startX, startY, nave.angolo));
+			         // Ottiene un proiettile dal pool invece di crearne uno nuovo
+			            Proiettile proiettile = proiettilePool.getProiettile(startX, startY, nave.angolo);
+			            proiettili.add(proiettile);
 			        }
 			    }
 			}
@@ -261,9 +262,11 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        Proiettile proiettile = iterProiettili.next();
 	        proiettile.aggiorna();
 	        
-	     // Rimuovi i proiettili che escono dallo schermo
-	        if (proiettile.x < 0 || proiettile.x > getWidth()) {
-	            iterProiettili.remove();
+	     // Controlla se il proiettile ha colpito un bersaglio o è uscito dallo schermo
+	        boolean proiettileDaRimuovere = proiettile.x < 0 || proiettile.x > getWidth() || proiettile.y < 0 || proiettile.y > getHeight();
+	        if (proiettileDaRimuovere) {
+	            iterProiettili.remove(); // Rimuove il proiettile dalla lista dei proiettili attivi
+	            proiettilePool.releaseProiettile(proiettile); // Rilascia il proiettile nel pool per il riutilizzo
 	            continue;
 	        }
 
@@ -289,6 +292,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	 	                if (!areaAsteroide.isEmpty()) {
 	 	                    // Collisione rilevata, gestisci qui
 	 	                    iterProiettili.remove(); // Rimuovi il proiettile
+	 	                    proiettilePool.releaseProiettile(proiettile); // Rilascia il proiettile nel pool per il riutilizzo
 	 	                    asteroide.colpito(); // Aggiorna lo stato dell'asteroide per il colpo ricevuto
 
 	 	                    if (asteroide.getColpiSubiti() >= 5) {
