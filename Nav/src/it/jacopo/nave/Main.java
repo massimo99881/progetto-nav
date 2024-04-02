@@ -8,6 +8,9 @@ public class Main {
 	
 
 	public static void main(String[] args) {
+		// Precarica le immagini degli asteroidi
+	    Asteroide.precaricaImmagini();
+		
 		JFrame frame = new JFrame();
 		frame.setDefaultCloseOperation(frame.EXIT_ON_CLOSE);
 		frame.setBounds(200, 200, Conf.FRAME_WIDTH, Conf.FRAME_HEIGHT);
@@ -18,6 +21,7 @@ public class Main {
 		pan.addKeyListener(pan);
 		pan.addMouseMotionListener(pan);
 		pan.setFocusable(true);
+		
 		
 		frame.setVisible(true);
 		

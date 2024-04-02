@@ -109,7 +109,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
         aggiungiAsteroidiTimer = new Timer(Conf.Level_timer, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (aggiunteEffettuate < Conf.MAX_AGGIUNTE) {
+                if (aggiunteEffettuate < Conf.Level_Total) {
                     aggiungiAsteroidi();
                     aggiunteEffettuate++;
                 } else {
@@ -141,7 +141,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 
 	// Metodo aggiungiAsteroidi per aggiungere asteroidi periodicamente
 	private void aggiungiAsteroidi() {
-	    for (int i = 0; i < 10; i++) {
+	    for (int i = 0; i < Conf.MAX_AGGIUNTE; i++) {
 	        aggiungiAsteroide(); // Aggiunge un singolo asteroide utilizzando il metodo definito sopra
 	    }
 	    // Opzionalmente, puoi aggiungere qui logica aggiuntiva, per esempio per fermare il Timer dopo un certo numero di aggiunte

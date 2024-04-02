@@ -12,6 +12,8 @@ import java.awt.geom.GeneralPath;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import javax.imageio.ImageIO;
@@ -26,6 +28,7 @@ public class Asteroide extends GameObject {
     final double ANGLE_BASE ;
     private int colpiSubiti = 0;
     float opacita = 1.0f; // Opacità iniziale al 100%
+    static final Map<String, AsteroideCache> imageCache = new HashMap<String, AsteroideCache>();
     
  // Metodo per gestire l'essere colpiti da un proiettile
     public void colpito() {
@@ -48,35 +51,49 @@ public class Asteroide extends GameObject {
         return colpiSubiti;
     }
 
+    public static void precaricaImmagini() {
+    	int asteroidNumber = Conf.asteroid_number;
+        // Caricamento e cache delle prime 15 immagini con nomi specifici
+        for (int i = 1; i <= asteroidNumber; i++) {
+            String percorso = Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png";
+            caricaImmagine(percorso);
+        }
+    }
+
+    private static void caricaImmagine(String path) {
+        // Verifica se l'immagine è già stata caricata nella cache
+        if (!imageCache.containsKey(path)) {
+            
+            	try {
+            		Random rand = new Random();
+                    BufferedImage originalImage = ImageIO.read(new File(path));
+                    double scaleFactor = !path.contains("asteroide1.png") ? 0.2 + (0.45 - 0.2) * rand.nextDouble() : 0.2;
+                    int newWidth = (int) (originalImage.getWidth() * scaleFactor);
+                    int newHeight = (int) (originalImage.getHeight() * scaleFactor);
+                    AsteroideCache ac = new AsteroideCache(originalImage.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH));
+                   
+                    imageCache.put(path, ac);
+                } 
+            	catch (IOException e) {
+                    e.printStackTrace();
+                }
+            	catch (Exception e) {
+                    System.err.println("Errore nel caricamento dell'immagine da: " + path);
+                    e.printStackTrace();
+                }
+        }
+    }
+
     public Asteroide(String nome, String imagePath) {
     	this.name=nome;
-    	
-    	BufferedImage originalImage = null;
-    	int newWidth = 0;
-    	int newHeight = 0;
-    	 // Caricamento dell'immagine
-    	Random rand = new Random();
-    	double scaleFactor = 0.2;
-    	if(!imagePath.contains("asteroide1.png")) {
-    		scaleFactor = 0.2 + (0.45 - 0.2) * rand.nextDouble(); // Genera un numero casuale tra 0.2 e 0.35
-    	}
-    	try {
-            originalImage = ImageIO.read(new File(imagePath));
-            // Calcola le nuove dimensioni dell'immagine riducendola 
-            newWidth = (int) (originalImage.getWidth(null) * scaleFactor); // 80% dell'originale
-            newHeight = (int) (originalImage.getHeight(null) * scaleFactor); // 80% dell'originale
-            
-            // Ridimensiona l'immagine
-            this.image = originalImage.getScaledInstance(newWidth, newHeight, Image.SCALE_FAST);
-        } catch (IOException e) {
-            e.printStackTrace();
-            this.image = null; // Gestisci l'errore impostando l'immagine a null
-        }
+    	// Caricamento e ridimensionamento dell'immagine con riuso tramite cache
+    	// Recupera l'immagine dall'immagine cache, supponendo che sia già stata precaricata
+        this.image = imageCache.get(imagePath).getImage();
     	ANGLE_BASE = (Math.random() - 0.5) * 2; // angolo traiettoria
          
         this.speed = 2.0 + Math.random() * 4.0; // Velocità casuale da 2.0 a 5.0
 
-        shape = Conf.getPolygonFromImage(Conf.toBufferedImage(this.image));
+        shape = imageCache.get(imagePath).getPolygon();
 
         // Imposta una velocità di rotazione casuale
         angoloRotazione = (Math.random() * 2 - 1) * Math.PI / 180;
@@ -102,7 +119,7 @@ public class Asteroide extends GameObject {
             at.translate(-imageCenterX, -imageCenterY);
 
             g.drawImage(this.image, at, null);
-            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+            //g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
             
         } else {
             super.draw(g);
