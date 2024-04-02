@@ -1,5 +1,6 @@
 package it.jacopo.nave;
 
+import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -24,17 +25,23 @@ public class Asteroide extends GameObject {
     double angoloRotazione; // Angolo di rotazione per la rotazione casuale
     final double ANGLE_BASE ;
     private int colpiSubiti = 0;
+    float opacita = 1.0f; // Opacità iniziale al 100%
     
  // Metodo per gestire l'essere colpiti da un proiettile
     public void colpito() {
-        colpiSubiti++;
-        System.out.println("Asteroide colpito");
-        // Se l'asteroide viene colpito 5 volte, viene distrutto
-        if (colpiSubiti >= 5) {
+    	colpiSubiti++;
+        // Gestisci il colpo riducendo l'opacità
+    	if(opacita>=0) {
+    		opacita -= 0.1; // Riduci del 20% per ogni colpo
+    	}
+    	
+        
+    	if (colpiSubiti >= 5) {
+            // L'asteroide è completamente "dissolto", gestisci la rimozione
             System.out.println(name + " è stato distrutto");
-            // Qui potresti voler rimuovere l'asteroide dalla lista degli asteroidi nel Panello
-            // Ma questo dovrebbe essere gestito dal metodo di aggiornamento del gioco nella classe Panello
+            
         }
+         
     }
     
     public int getColpiSubiti() {
@@ -82,6 +89,8 @@ public class Asteroide extends GameObject {
     @Override
     void draw(Graphics2D g) {
         if (this.image != null /* && !gameStopped */) {
+        	float safeOpacity = Math.max(0, Math.min(opacita, 1.0f));
+        	g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, safeOpacity));
             AffineTransform at = new AffineTransform();
             int imageWidth = this.image.getWidth(null);
             int imageHeight = this.image.getHeight(null);
@@ -93,6 +102,7 @@ public class Asteroide extends GameObject {
             at.translate(-imageCenterX, -imageCenterY);
 
             g.drawImage(this.image, at, null);
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
             
         } else {
             super.draw(g);
