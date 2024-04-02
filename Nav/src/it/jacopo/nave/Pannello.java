@@ -65,17 +65,20 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 		obj.put(nave2.nome, nave2);
 		
 		addMouseListener(new MouseAdapter() {
-	        @Override
-	        public void mouseClicked(MouseEvent e) {
-	            if (e.getButton() == MouseEvent.BUTTON1) {
-	                // Ottiene la navicella principale
-	                Nav nave = (Nav) obj.get("navicella1");
-	                if (nave != null) {
-	                    // Crea un proiettile alla posizione della navicella
-	                    proiettili.add(new Proiettile(nave.x + nave.shape.getBounds().width / 2, nave.y + nave.shape.getBounds().height / 2));
-	                }
-	            }
-	        }
+			@Override
+			public void mouseClicked(MouseEvent e) {
+			    if (e.getButton() == MouseEvent.BUTTON1) {
+			        Nav nave = (Nav) obj.get("navicella1");
+			        if (nave != null) {
+			            // Calcola la posizione iniziale del proiettile sulla punta della navicella
+			            double startX = nave.x + 30 * Math.cos(nave.angolo); // 30 è la lunghezza dalla base alla punta della navicella
+			            double startY = nave.y + 30 * Math.sin(nave.angolo);
+			            
+			            // Crea un proiettile alla posizione calcolata e con l'angolo della navicella
+			            proiettili.add(new Proiettile(startX, startY, nave.angolo));
+			        }
+			    }
+			}
 	    });
 		
 		// Inizializza 15 asteroidi con posizioni iniziali visibili
