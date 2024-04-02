@@ -6,8 +6,16 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
 
-public class Proiettile {
+public class Proiettile  {
     double x, y; // Posizione del proiettile
+    public double getX() {
+        return x;
+    }
+
+    // Getter per y
+    public double getY() {
+        return y;
+    }
     double velocita = 5; // Velocità del proiettile
     double angolo;
     

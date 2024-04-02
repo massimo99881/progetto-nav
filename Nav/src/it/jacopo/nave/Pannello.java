@@ -285,6 +285,16 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            	 Rectangle boundsAsteroide = gameObject.getBounds(); // Assumendo che Asteroide abbia anche un metodo getBounds
 	                 if (boundsProiettile.intersects(boundsAsteroide)) {
 	                	Asteroide asteroide = (Asteroide) gameObject;
+	                	
+	                	
+	                	// Prima verifica basata sulla distanza
+	                    double distanza = Math.sqrt(Math.pow(asteroide.getX() - proiettile.getX(), 2) + Math.pow(asteroide.getY() - proiettile.getY(), 2));
+	                    if (distanza > 130) {
+	                        // Se la distanza è maggiore di 30 px, salta la verifica dettagliata e continua con il prossimo asteroide
+	                        continue;
+	                    }
+	                	
+	                    // eseguire la verifica più dettagliata basata su Area e Shape
 	 	                Area areaAsteroide = new Area(asteroide.getTransf());
 	 	                Area areaProiettile = new Area(shapeProiettile);
 	 	                
@@ -306,12 +316,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        }
 	    }
 
-	    // Aggiornamento delle esplosioni...
 	}
 
-
-
-	
 	// Metodo per resettare il gioco
 	private void resetGame() {
 	    // Reimposta lo stato del gioco

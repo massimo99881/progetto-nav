@@ -29,6 +29,8 @@ public class Asteroide extends GameObject {
     private int colpiSubiti = 0;
     float opacita = 1.0f; // Opacità iniziale al 100%
     static final Map<String, AsteroideCache> imageCache = new HashMap<String, AsteroideCache>();
+    private AffineTransform cachedTransform;
+    private double prevX, prevY, prevAngoloRotazione;
     
  // Metodo per gestire l'essere colpiti da un proiettile
     public void colpito() {
@@ -86,6 +88,7 @@ public class Asteroide extends GameObject {
 
     public Asteroide(String nome, String imagePath) {
     	this.name=nome;
+    	
     	// Caricamento e ridimensionamento dell'immagine con riuso tramite cache
     	// Recupera l'immagine dall'immagine cache, supponendo che sia già stata precaricata
         this.image = imageCache.get(imagePath).getImage();
@@ -100,7 +103,7 @@ public class Asteroide extends GameObject {
         if (Math.random() > 0.5) {
             angoloRotazione *= -1; // Cambia il verso della rotazione
         }
-        
+        this.raggio = Math.min(this.image.getWidth(null), this.image.getHeight(null)) / 2;
     }
 
     @Override
@@ -115,19 +118,35 @@ public class Asteroide extends GameObject {
         // Controllo se l'asteroide è dentro i confini dello schermo
         if (x + imageWidth >= 0 && x <= Conf.FRAME_WIDTH && y + imageHeight >= 0 && y <= Conf.FRAME_HEIGHT) {
         	if (this.image != null && opacita > 0 /* && !gameStopped */) {
-            	float safeOpacity = Math.max(0, Math.min(opacita, 1.0f));
-            	g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, safeOpacity));
-                AffineTransform at = new AffineTransform();
-                
-                int imageCenterX = imageWidth / 2;
-                int imageCenterY = imageHeight / 2;
+        		
+        		// Controlla se la posizione o l'angolo di rotazione sono cambiati
+                if (cachedTransform == null || x != prevX || y != prevY || angoloRotazione != prevAngoloRotazione) {
+                    // Calcola la nuova trasformazione perché lo stato è cambiato
+                    cachedTransform = new AffineTransform();
+                    imageWidth = this.image.getWidth(null);
+                    imageHeight = this.image.getHeight(null);
+                    int imageCenterX = imageWidth / 2;
+                    int imageCenterY = imageHeight / 2;
 
-                at.translate(x + imageCenterX, y + imageCenterY);
-                at.rotate(angoloRotazione, 0, 0);
-                at.translate(-imageCenterX, -imageCenterY);
+                    cachedTransform.translate(x + imageCenterX, y + imageCenterY);
+                    cachedTransform.rotate(angoloRotazione, 0, 0);
+                    cachedTransform.translate(-imageCenterX, -imageCenterY);
 
-                g.drawImage(this.image, at, null);
-                //g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+                    // Aggiorna lo stato precedente
+                    prevX = x;
+                    prevY = y;
+                    prevAngoloRotazione = angoloRotazione;
+                }
+        		
+                // Imposta l'opacità dell'asteroide basandosi sul campo 'opacita'
+                float safeOpacity = Math.max(0f, Math.min(opacita, 1f));  // Assicura che l'opacità sia nel range [0,1]
+                g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, safeOpacity));
+
+                // Disegna l'immagine dell'asteroide utilizzando la trasformazione memorizzata nella cache
+                g.drawImage(this.image, cachedTransform, null);
+
+                // Reimposta l'opacità a 1.0 per non influenzare il disegno di altri oggetti
+                g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
                 
             } else {
                 super.draw(g);

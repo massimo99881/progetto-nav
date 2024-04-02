@@ -1,6 +1,7 @@
 package it.jacopo.nave;
 
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Shape;
@@ -12,6 +13,15 @@ public class GameObject {
 	double speed;
 	double angolo;
 	int x, y;
+	public int getX() {
+        return x;
+    }
+
+    // Getter per y
+    public int getY() {
+        return y;
+    }
+	protected int raggio; // Raggio dell'oggetto
 	
 	void draw(Graphics2D g) {
 		AffineTransform at = new AffineTransform();
@@ -37,4 +47,12 @@ public class GameObject {
 	Rectangle getBounds() {
 	    return getTransf().getBounds();
 	}
+	public Point getCenter() {
+	    return new Point(x + this.raggio, y + this.raggio);
+	}
+	// Calcola la distanza tra due punti
+	public static double calcolaDistanza(int x1, int y1, int x2, int y2) {
+	    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+	}
+
 }
