@@ -31,8 +31,8 @@ public class Nav extends GameObject{
 
 		
 		try {
-            BufferedImage tempImageSpenta = ImageIO.read(new File("astronavespenta.png")); // Sostituisci con il percorso corretto
-            BufferedImage tempImageAccesa = ImageIO.read(new File("astronaveaccesa.png"));
+            BufferedImage tempImageSpenta = ImageIO.read(new File(Conf._RESOURCES_IMG_PATH + "astronavespenta.png")); // Sostituisci con il percorso corretto
+            BufferedImage tempImageAccesa = ImageIO.read(new File(Conf._RESOURCES_IMG_PATH + "astronaveaccesa.png"));
             imageToDraw = tempImageSpenta;
 
             // Calcola le nuove dimensioni mantenendo le proporzioni e riducendo del 80%
@@ -43,8 +43,8 @@ public class Nav extends GameObject{
             int newHeightAccesa = (int) (tempImageAccesa.getHeight() * misura);
 
             // Ridimensiona le immagini
-            navImageSpenta = Util.toBufferedImage(tempImageSpenta.getScaledInstance(newWidthSpenta, newHeightSpenta, Image.SCALE_SMOOTH));
-            navImageAccesa = Util.toBufferedImage(tempImageAccesa.getScaledInstance(newWidthAccesa, newHeightAccesa, Image.SCALE_SMOOTH));
+            navImageSpenta = Conf.toBufferedImage(tempImageSpenta.getScaledInstance(newWidthSpenta, newHeightSpenta, Image.SCALE_SMOOTH));
+            navImageAccesa = Conf.toBufferedImage(tempImageAccesa.getScaledInstance(newWidthAccesa, newHeightAccesa, Image.SCALE_SMOOTH));
             
 //            shape = Util.getPolygonFromImage(imageToDraw);
         } catch (IOException e) {
@@ -88,27 +88,4 @@ public class Nav extends GameObject{
 	    g.draw(at2.createTransformedShape(shape));
 	}
 	
-//	@Override
-//    Shape getTransf() {
-//        AffineTransform at = new AffineTransform();
-//
-//        // Calcola il centro dell'immagine per la rotazione
-//        int imageWidth = imageToDraw.getWidth(null);
-//        int imageHeight = imageToDraw.getHeight(null);
-//        int imageCenterX = imageWidth / 2;
-//        int imageCenterY = imageHeight / 2;
-//
-//        // Prima trasla al centro dello schermo (o alla posizione desiderata)
-//        at.translate(x + imageCenterX, y + imageCenterY);
-//
-//        // Poi ruota attorno al centro dell'immagine
-//        at.rotate(angolo, 0, 0);
-//
-//        // Trasla indietro in modo che l'angolo in alto a sinistra sia nella posizione corretta
-//        at.translate(-imageCenterX, -imageCenterY);
-//
-//        // Applica la trasformazione alla forma 
-//        return at.createTransformedShape(shape);
-//    }
-
 }

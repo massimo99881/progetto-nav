@@ -32,8 +32,6 @@ public class GameObject {
 	}
 
 	void updateMovement() {
-		// TODO Auto-generated method stub
-		
 	}
 	
 	Rectangle getBounds() {

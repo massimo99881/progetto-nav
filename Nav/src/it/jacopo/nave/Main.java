@@ -5,13 +5,15 @@ import javax.swing.JFrame;
 
 public class Main {
 
+	
+
 	public static void main(String[] args) {
 		JFrame frame = new JFrame();
 		frame.setDefaultCloseOperation(frame.EXIT_ON_CLOSE);
-		frame.setBounds(200, 200, 1200, 800);
+		frame.setBounds(200, 200, Conf.FRAME_WIDTH, Conf.FRAME_HEIGHT);
 		
-		Panello pan = new Panello();
-		pan.setBounds(0, 0, 1200, 800);
+		Pannello pan = new Pannello();
+		pan.setBounds(0, 0, Conf.FRAME_WIDTH, Conf.FRAME_HEIGHT);
 		frame.add(pan);
 		pan.addKeyListener(pan);
 		pan.addMouseMotionListener(pan);
