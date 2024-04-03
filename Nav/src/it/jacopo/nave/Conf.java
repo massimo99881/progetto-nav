@@ -13,7 +13,7 @@ public class Conf {
 	final static int asteroid_number = 15;
 	final static int _FPSms = 16;
 	final static int MAX_AGGIUNTE = 10;
-	final static int Level_timer = 20000;
+	final static int Level_timer = 15000;
 	final static int Level_Total = 10;
 	final static int FRAME_HEIGHT = 800;
 	final static int FRAME_WIDTH = 1200;

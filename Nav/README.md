@@ -128,6 +128,7 @@ java -jar space-defenders.jar
 - [OK] sound on/OFF
 - motore non si spegne quando la nav si ferma e il cursore  è lontano
 - fix post-reset game per ricalcolo ascissa asteroidi quando resize panel
+- fix post hai vinto
 - multi-giocatore
 
 ## Contribuire
