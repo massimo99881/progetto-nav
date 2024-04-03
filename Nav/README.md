@@ -120,9 +120,10 @@ java -jar space-defenders.jar
 - [OK] proiettili seguono la direzione della linea che parte dalla punta della navicella.
 - [OK] ricerca ottimizzazioni memoria
 - [OK] documentazione, con dettaglio su ottimizzazioni memoria
-- [TODO] posizione del primo gruppo di asteroidi
+- [OK] posizione del primo gruppo di asteroidi
 - [OK] continua a sparare mentre muovi il mouse e tieni premuto click sx
 - [OK] introduzione timing per lo sparo continuo
+- [OK] riposizionamento asteroidi e nav al resize del panel (fix post-reset game)
 - [OK] resetGame (ricomincia da capo? SI)
 - sound on/OFF
 

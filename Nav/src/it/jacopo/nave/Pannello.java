@@ -165,10 +165,19 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	@Override
 	public void componentResized(ComponentEvent e) {
 	    if (this.getWidth() > 0 && this.larghezzaPrecedente > 0) { // Assicurati che entrambe le larghezze siano valide
+	    	// Aggiorna la posizione delle navicelle
+	        for (Entry<String, GameObject> entry : obj.entrySet()) {
+	            GameObject gameObject = entry.getValue();
+	            if (gameObject instanceof Nav) {
+	                double proporzione = gameObject.x / (double) this.larghezzaPrecedente;
+	                gameObject.x = (int) (proporzione * this.getWidth());
+	            }
+	        }
+
+	        // Aggiorna la posizione degli asteroidi
 	        for (String nomeAsteroide : nomiAsteroidi) {
 	            GameObject asteroide = obj.get(nomeAsteroide);
 	            if (asteroide != null) {
-	                // Usa 'larghezzaPrecedente' per calcolare la proporzione
 	                double proporzione = asteroide.x / (double) this.larghezzaPrecedente;
 	                asteroide.x = (int) (proporzione * this.getWidth());
 	            }
@@ -448,6 +457,9 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    Nav nave = new Nav("navicella1");
 	    Nav nave2 = new Nav("navicella2");
 	    
+	    this.width = this.getWidth();
+        this.height = this.getHeight();
+	    
 	    nave2.x =  25; 
         nave2.y =  Conf.FRAME_HEIGHT/3 + 150; 
         
@@ -461,7 +473,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    for (int i = 1; i <= Conf.asteroid_number; i++) {
 	        String nomeAsteroide = "asteroide" + i;
 	        Asteroide asteroide = new Asteroide(this, nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png");
-	        asteroide.x = 1200-5; // Ad esempio, se la larghezza della finestra di gioco è 1200
+	        asteroide.x = this.getWidth()-5; // Ad esempio, se la larghezza della finestra di gioco è 1200
 	        Random rand = new Random();
 	        int numeroCasuale = rand.nextInt(441) + 10;
 	        asteroide.y = numeroCasuale;
@@ -472,7 +484,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    aggiunteEffettuate = 0; // Resetta il conteggio delle aggiunte
 	    aggiungiAsteroidiTimer.start();
 
-	    // Se il gioco supporta altre entità o meccaniche, inizializzale qui
+	    // Assicurati di aggiornare 'larghezzaPrecedente' alla larghezza attuale dopo il reset
+	    this.larghezzaPrecedente = this.getWidth();
 	}
 
 	
