@@ -54,14 +54,23 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	private int aggiunteEffettuate = 0;
 	private boolean staSparando = false;
 	private Timer timerSparo;
+	private long lastShootTime = 0;
+	private final long SHOOT_INTERVAL = 100; // Intervallo tra gli spari in millisecondi
+
 	
 	private void spara() {
 	    if (staSparando) {
+	    	long currentTime = System.currentTimeMillis();
+	        if (currentTime - lastShootTime < SHOOT_INTERVAL) {
+	            return; // Non abbastanza tempo è passato, quindi non sparare
+	        }
+	        lastShootTime = currentTime; // Aggiorna l'ultimo tempo di sparo
+
 	        Nav nave = (Nav) obj.get("navicella1");
 	        if (nave != null) {
 	            double startX = nave.x + 30 * Math.cos(nave.angolo);
 	            double startY = nave.y + 30 * Math.sin(nave.angolo);
-	            Proiettile proiettile = proiettilePool.getProiettile(startX, startY, nave.angolo);
+	            Proiettile proiettile = new Proiettile(startX, startY, nave.angolo);
 	            proiettili.add(proiettile);
 	        }
 	    }
@@ -432,7 +441,15 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	public void keyReleased(KeyEvent e) {}
 	@Override
 	public void mouseDragged(MouseEvent e) {
-		
+		if (staSparando) {
+            Nav nave = (Nav) obj.get("navicella1");
+            if (nave != null) {
+                // Calcola l'angolo tra la navicella e la posizione del cursore del mouse
+                double angleToMouse = Math.atan2(e.getY() - nave.y, e.getX() - nave.x);
+                nave.angolo = angleToMouse;
+                spara(); // Sparare in direzione dell'angolo aggiornato
+            }
+        }
 	}
 	@Override
 	public void mouseMoved(MouseEvent e) {	
