@@ -28,6 +28,11 @@ import java.util.Map.Entry;
 import java.util.Random;
 
 import javax.imageio.ImageIO;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -59,6 +64,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	private final long SHOOT_INTERVAL = 100; // Intervallo tra gli spari in millisecondi
 	private int asteroidiDistrutti = 0;
 	private int larghezzaPrecedente;
+	
+	private Clip clipAudio;
 	
 	public Pannello() {
 		Nav nave = new Nav("navicella1");  //nave principale	
@@ -138,6 +145,15 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
                     aggiungiAsteroidi();
                     aggiunteEffettuate++;
                 } else {
+                	try {
+        		        File fileAudio = new File(Conf._RESOURCES_AUDIO_PATH + "winner.wav"); 
+        		        AudioInputStream audioStream = AudioSystem.getAudioInputStream(fileAudio);
+        		        clipAudio = AudioSystem.getClip();
+        		        clipAudio.open(audioStream);
+        		        clipAudio.start();
+        		    } catch (UnsupportedAudioFileException | IOException | LineUnavailableException ex) {
+        		        ex.printStackTrace();
+        		    }
                     aggiungiAsteroidiTimer.stop(); // Ferma il Timer
                     JOptionPane.showMessageDialog(null, "Hai vinto!", "Complimenti", JOptionPane.INFORMATION_MESSAGE);
                 }
@@ -160,6 +176,21 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
         this.larghezzaPrecedente = this.getWidth(); 
         // Aggiungi 'this' come ComponentListener del pannello
         this.addComponentListener(this);
+        
+        caricaAudio(); // Carica l'audio
+        clipAudio.start(); // Avvia l'audio
+        clipAudio.loop(Clip.LOOP_CONTINUOUSLY); // Loop continuo
+	}
+	
+	private void caricaAudio() {
+	    try {
+	        File fileAudio = new File(Conf._RESOURCES_AUDIO_PATH + "Ignis.wav"); // Assicurati che il percorso sia corretto
+	        AudioInputStream audioStream = AudioSystem.getAudioInputStream(fileAudio);
+	        clipAudio = AudioSystem.getClip();
+	        clipAudio.open(audioStream);
+	    } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+	        e.printStackTrace();
+	    }
 	}
 	
 	@Override
@@ -216,6 +247,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            double startY = nave.y + 30 * Math.sin(nave.angolo);
 	            Proiettile proiettile = new Proiettile(startX, startY, nave.angolo);
 	            proiettili.add(proiettile);
+	            
+	            riproduciSuonoSparo(); // Riproduce il suono dello sparo
 	        }
 	    }
 	}
@@ -336,13 +369,37 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 		if (!areaNav.isEmpty()) {
 		    System.out.println( "Collisione avvenuta! Gioco terminato.");
 		    gameStopped = true; 
+		    clipAudio.stop();
+		    try {
+		        File fileAudio = new File(Conf._RESOURCES_AUDIO_PATH + "losing.wav"); // Assicurati che il percorso sia corretto
+		        AudioInputStream audioStream = AudioSystem.getAudioInputStream(fileAudio);
+		        clipAudio = AudioSystem.getClip();
+		        clipAudio.open(audioStream);
+		        clipAudio.start();
+		    } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+		        e.printStackTrace();
+		    }
 		    JOptionPane.showMessageDialog(null, "Hai perso! Il gioco verrà riavviato.", "Game Over", JOptionPane.INFORMATION_MESSAGE);
 	        resetGame(); 
 	        // Riavvia il gioco immediatamente dopo la chiusura del messaggio
 	        return;
 		}
 	}
-	
+	private void riproduciSuonoSparo() {
+	    try {
+	        // Carica il suono dello sparo
+	        File fileAudio = new File(Conf._RESOURCES_AUDIO_PATH + "laser.wav"); // Assicurati che il percorso sia corretto
+	        AudioInputStream audioStream = AudioSystem.getAudioInputStream(fileAudio);
+	        Clip clipSparo = AudioSystem.getClip();
+	        clipSparo.open(audioStream);
+
+	        // Riproduce il suono una volta
+	        clipSparo.start();
+	    } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+	        e.printStackTrace();
+	    }
+	}
+
 	
 	public void aggiornaGioco() {
 		
@@ -405,6 +462,16 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	 	                        // Stampa un messaggio in console
 	 	                        System.out.println(asteroide.name + " è stato distrutto"); 
 	 	                       asteroidiDistrutti++; 
+	 	                       
+	 	                      try {
+		 	         		        File fileAudio = new File(Conf._RESOURCES_AUDIO_PATH + "asteroid.wav"); 
+		 	         		        AudioInputStream audioStream = AudioSystem.getAudioInputStream(fileAudio);
+		 	         		        clipAudio = AudioSystem.getClip();
+		 	         		        clipAudio.open(audioStream);
+		 	         		        clipAudio.start();
+		 	         		    } catch (UnsupportedAudioFileException | IOException | LineUnavailableException ex) {
+		 	         		        ex.printStackTrace();
+		 	         		    }
 	 	                    }
 	 	                    // Esci dal ciclo se una collisione è stata trovata
 	 	                    break; 
@@ -450,6 +517,12 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    aggiungiAsteroidiTimer.stop(); // Ferma il timer che aggiunge gli asteroidi
 	    initializeGameObjects(); // Reinizializza gli oggetti del gioco
 	    gameTimer.start(); // Riavvia il timer del gioco
+	    if (clipAudio != null && clipAudio.isOpen()) {
+	        clipAudio.close(); // Chiude l'audio clip corrente
+	    }
+	    caricaAudio(); // Ricarica l'audio
+	    clipAudio.start(); // Riavvia l'audio
+	    clipAudio.loop(Clip.LOOP_CONTINUOUSLY); // Loop continuo
 	}
 	
 	private void initializeGameObjects() {

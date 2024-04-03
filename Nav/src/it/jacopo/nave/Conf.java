@@ -8,7 +8,7 @@ import java.awt.image.BufferedImage;
 public class Conf {
 	
 	final static String _RESOURCES_IMG_PATH = "resources/img/";
-	
+	final static String _RESOURCES_AUDIO_PATH = "resources/audio/";
 	final static String SFONDO_JPG = "sfondo.jpg";
 	final static int asteroid_number = 15;
 	final static int _FPSms = 16;
@@ -17,5 +17,5 @@ public class Conf {
 	final static int Level_Total = 10;
 	final static int FRAME_HEIGHT = 800;
 	final static int FRAME_WIDTH = 1200;
-	
+		
 }

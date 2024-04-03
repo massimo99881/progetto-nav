@@ -123,9 +123,12 @@ java -jar space-defenders.jar
 - [OK] posizione del primo gruppo di asteroidi
 - [OK] continua a sparare mentre muovi il mouse e tieni premuto click sx
 - [OK] introduzione timing per lo sparo continuo
-- [OK] riposizionamento asteroidi e nav al resize del panel (fix post-reset game)
+- [OK] riposizionamento asteroidi e nav al resize del panel 
 - [OK] resetGame (ricomincia da capo? SI)
-- sound on/OFF
+- [OK] sound on/OFF
+- motore non si spegne quando la nav si ferma e il cursore  è lontano
+- fix post-reset game per ricalcolo ascissa asteroidi quando resize panel
+- multi-giocatore
 
 ## Contribuire
 Siamo aperti a contributi! Se vuoi migliorare il gioco o aggiungere nuove funzionalità, sentiti libero di aprire una pull request. Per contribuire al progetto, segui questi passaggi:
