@@ -20,7 +20,7 @@ public class Asteroide extends GameObject {
     final double ANGLE_BASE ;
     private int colpiSubiti = 0;
     float opacita = 1.0f; // Opacità iniziale al 100%
-    static final Map<String, AsteroideCache> imageCache = new HashMap<String, AsteroideCache>();
+    static final Map<String, Cache> imageCache = new HashMap<String, Cache>();
     private AffineTransform cachedTransform;
     private double prevX, prevY, prevAngoloRotazione;
     
@@ -59,7 +59,7 @@ public class Asteroide extends GameObject {
                 double scaleFactor = !path.contains("asteroide1.png") ? 0.2 + (0.45 - 0.2) * rand.nextDouble() : 0.2;
                 int newWidth = (int) (originalImage.getWidth() * scaleFactor);
                 int newHeight = (int) (originalImage.getHeight() * scaleFactor);
-                AsteroideCache ac = new AsteroideCache(originalImage.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH));
+                Cache ac = new Cache(originalImage.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH));
                 imageCache.put(path, ac);
             } 
         	catch (IOException e) {
@@ -73,16 +73,21 @@ public class Asteroide extends GameObject {
     }
 
     public Asteroide(String nome, String imagePath) {
+    	super(nome);
     	this.name=nome;
     	
     	// Caricamento e ridimensionamento dell'immagine con riuso tramite cache
     	// Recupera l'immagine dall'immagine cache, supponendo che sia già stata precaricata
         this.image = imageCache.get(imagePath).getImage();
+        //this.image = originalImage.getScaledInstance(newWidth, newHeight, Image.SCALE_FAST);
+        
     	ANGLE_BASE = (Math.random() - 0.5) * 2; // angolo traiettoria
          
         this.speed = 2.0 + Math.random() * 4.0; // Velocità casuale da 2.0 a 5.0
 
-        shape = imageCache.get(imagePath).getPolygon();
+        //shape = imageCache.get(imagePath).getPolygon();
+        
+        shape = getPolygonFromImage(toBufferedImage(this.image));
 
         // Imposta una velocità di rotazione casuale
         angoloRotazione = (Math.random() * 2 - 1) * Math.PI / 180;
@@ -133,7 +138,11 @@ public class Asteroide extends GameObject {
 
                 // Reimposta l'opacità a 1.0 per non influenzare il disegno di altri oggetti
                 //g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
-                
+                //TODO da eliminare
+                AffineTransform at2 = new AffineTransform();
+        	    at2.translate(x, y);
+        		at2.rotate(angolo);
+        	    g.draw(at2.createTransformedShape(shape));
             } else {
                 super.draw(g);
             }

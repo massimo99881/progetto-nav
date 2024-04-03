@@ -5,6 +5,7 @@ TODO LIST:
 [OK]- mettere l'immagine nav accesa/spenta
 [WP]- (trasparenza) implementare le esplosioni (asteroide e magari quando il proiettile colpisce)
 [OK]- proiettili seguono la direzione della linea che parte dalla punta della navicella.
-- ricerca ottimizzazioni memoria
+[WP]- ricerca ottimizzazioni memoria
+[WP]- asteroide1 
 - resetGame (ricomincia da capo? SI)
 - sound on/OFF

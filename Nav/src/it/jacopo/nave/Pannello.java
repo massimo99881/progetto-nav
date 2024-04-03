@@ -111,7 +111,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 
 		
 		// Inizializza 15 asteroidi con posizioni iniziali visibili
-	    for (int i = 1; i <= Conf.asteroid_number; i++) {
+	    for (int i = 1; i <= Conf.asteroid_number; i++) { 
 	    	String nomeAsteroide = "asteroide" + i;
 	        Asteroide asteroide = new Asteroide(nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png");
 	        //TODO fix 
@@ -314,7 +314,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            
 	            if (gameObject instanceof Asteroide) {
 	            	
-	            	 Rectangle boundsAsteroide = gameObject.getBounds(); // Assumendo che Asteroide abbia anche un metodo getBounds
+	            	 //ottimizzazione: prima di calcolare le aree e shape, verifico se i rettangoli collidono
+	            	 Rectangle boundsAsteroide = gameObject.getBounds(); 
 	                 if (boundsProiettile.intersects(boundsAsteroide)) {
 	                	Asteroide asteroide = (Asteroide) gameObject;
 	                	
@@ -391,7 +392,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	public void keyReleased(KeyEvent e) {}
 	@Override
 	public void mouseDragged(MouseEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 	@Override

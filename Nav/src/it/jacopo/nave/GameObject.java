@@ -1,13 +1,15 @@
 package it.jacopo.nave;
 
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.Point;
 import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 
-public class GameObject {
+public class GameObject extends Cache {
+	
 	String name;
 	Polygon shape;
 	double speed;
@@ -15,6 +17,14 @@ public class GameObject {
 	int x, y;
 	
 	protected int raggio; 
+	
+	public GameObject(String nome) {
+		super(nome);
+	}
+	 
+	public GameObject(Image image) {
+		super(image);
+	}
 	
 	void draw(Graphics2D g) {
 		AffineTransform at = new AffineTransform();

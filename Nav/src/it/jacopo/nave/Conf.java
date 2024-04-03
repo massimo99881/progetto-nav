@@ -21,21 +21,5 @@ public class Conf {
 	 
 	//Methods
 	
-	public static BufferedImage toBufferedImage(Image img) {
-        if (img instanceof BufferedImage) {
-            return (BufferedImage) img;
-        }
-
-        // Crea un buffered image con trasparenza
-        BufferedImage bimage = new BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB);
-
-        // Disegna l'immagine su buffered image
-        Graphics2D bGr = bimage.createGraphics();
-        bGr.drawImage(img, 0, 0, null);
-        
-        bGr.dispose();
-
-        // Restituisce il buffered image
-        return bimage;
-    }
+	
 }

@@ -17,6 +17,7 @@ public class Nav extends GameObject{
 	BufferedImage imageToDraw ;
 	
 	public Nav(String nome) {
+		super(nome);
 		this.nome = nome;
 		this.x = 0;
 		this.y = 0;
@@ -40,8 +41,8 @@ public class Nav extends GameObject{
             int newHeightAccesa = (int) (tempImageAccesa.getHeight() * misura);
 
             // Ridimensiona le immagini
-            navImageSpenta = Conf.toBufferedImage(tempImageSpenta.getScaledInstance(newWidthSpenta, newHeightSpenta, Image.SCALE_SMOOTH));
-            navImageAccesa = Conf.toBufferedImage(tempImageAccesa.getScaledInstance(newWidthAccesa, newHeightAccesa, Image.SCALE_SMOOTH));
+            navImageSpenta = toBufferedImage(tempImageSpenta.getScaledInstance(newWidthSpenta, newHeightSpenta, Image.SCALE_SMOOTH));
+            navImageAccesa = toBufferedImage(tempImageAccesa.getScaledInstance(newWidthAccesa, newHeightAccesa, Image.SCALE_SMOOTH));
             
 //            shape = Util.getPolygonFromImage(imageToDraw);
         } catch (IOException e) {
