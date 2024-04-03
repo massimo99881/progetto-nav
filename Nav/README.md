@@ -118,7 +118,10 @@ java -jar space-defenders.jar
 - [OK] mettere l'immagine nav accesa/spenta
 - [OK] (trasparenza) implementare le esplosioni (asteroide e magari quando il proiettile colpisce)
 - [OK] proiettili seguono la direzione della linea che parte dalla punta della navicella.
-- [WIP] ricerca ottimizzazioni memoria
+- [OK] ricerca ottimizzazioni memoria
+- [WIP] documentazione
+- posizione del primo gruppo di asteroidi
+- continua a sparare mentre muovi il mouse e tieni premuto click sx
 - [OK] asteroide1 
 - resetGame (ricomincia da capo? SI)
 - sound on/OFF

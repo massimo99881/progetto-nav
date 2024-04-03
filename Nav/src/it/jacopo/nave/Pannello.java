@@ -190,6 +190,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	@Override
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
+		
 		this.width = this.getWidth();
         this.height = this.getHeight();
         
@@ -210,29 +211,29 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    }
 		
 	    Graphics2D g2d = (Graphics2D) g;
-
+	    // Evita di disegnare ulteriormente se il gioco è stato fermato
 	    if (gameStopped) {
 	        return;
 	    }
 	    
-	 // Disegna i proiettili
+	    // Disegna i proiettili
         for (Proiettile proiettile : proiettili) {
             proiettile.disegna(g2d);
         }
-        
+        // Controlla collisioni tra la navicella e il cursore
 		controllaCollisioneNavCursore();
 
-		for (Entry<String, GameObject> entry : obj.entrySet()) {
-			GameObject gameObject = entry.getValue();
-            if (gameObject instanceof Asteroide) {
-            	
-            	controllaCollisioneNavAsteroid(entry);
-                
-                // Se l'oggetto è un asteroide, aggiorna il suo movimento
-                gameObject.updateMovement();
-            }
-            gameObject.draw(g2d);
-        }
+		// Crea una copia temporanea della mappa degli oggetti per iterazione sicura
+		Map<String, GameObject> tempObjects = new HashMap<>(obj);
+	    for (Entry<String, GameObject> entry : tempObjects.entrySet()) {
+	        GameObject gameObject = entry.getValue();
+	        if (gameObject instanceof Asteroide) {
+	            gameObject.updateMovement();
+	            // Controlla le collisioni con ogni asteroide qui
+	            controllaCollisioneNavAsteroid(entry);
+	        }
+	        gameObject.draw(g2d);
+	    }
 	}
 
 
@@ -262,27 +263,17 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 			return;
 		}
         
-		Area area11 = new Area(navicella1.getTransf());
+		Area areaNav = new Area(navicella1.getTransf());
 		Area areaAsteroide = new Area(asteroide.getTransf());
-		area11.intersect(areaAsteroide);
+		areaNav.intersect(areaAsteroide);
 		
-		if (!area11.isEmpty()) {
+		if (!areaNav.isEmpty()) {
 		    System.out.println( "Collisione avvenuta! Gioco terminato.");
 		    gameStopped = true; 
-		    
-		 
-		    int choice = JOptionPane.showConfirmDialog(this, "Hai perso! Vuoi riavviare il gioco?", "Game Over", JOptionPane.YES_NO_OPTION);
-		    
-		    if (choice == JOptionPane.YES_OPTION) {
-		        // Riavvia il gioco
-		        // Implementa la logica per riavviare il gioco qui, ad esempio reimposta le variabili di stato e inizializza nuovi oggetti
-		    	resetGame();
-		    } else {
-		        // L'utente ha scelto di non riavviare il gioco, esci dall'applicazione o prendi altre azioni di chiusura
-		        // ...
-		    }
-		    
-		    return; 
+		    JOptionPane.showMessageDialog(null, "Hai perso! Il gioco verrà riavviato.", "Game Over", JOptionPane.INFORMATION_MESSAGE);
+	        resetGame(); 
+	        // Riavvia il gioco immediatamente dopo la chiusura del messaggio
+	        return;
 		}
 	}
 	
@@ -380,21 +371,42 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 
 	}
 
-	// Metodo per resettare il gioco
 	private void resetGame() {
-	    // Reimposta lo stato del gioco
 	    gameStopped = false;
-	    gameTimer.stop();
-	    // Imposta una nuova posizione iniziale sicura per la navicella principale
-	    obj.get("navicella1").x = 20; // Imposta la posizione X in un angolo opposto
-	    obj.get("navicella1").y = 110; // Imposta la posizione Y in un angolo opposto
-
-	    // Reimposta la velocità della navicella principale
-	    obj.get("navicella1").speed = 10; // O qualsiasi valore desiderato per la velocità iniziale
-
-	    // Potresti anche reimpostare altre variabili di stato o oggetti del gioco qui, se necessario
+	    proiettili.clear(); // Svuota la lista dei proiettili
+	    obj.clear(); // Rimuovi tutti gli oggetti del gioco
+	    nomiAsteroidi.clear(); // Svuota la lista dei nomi degli asteroidi
+	    sfondoX = 0; // Resetta la posizione dello sfondo
+	    gameTimer.stop(); // Ferma il timer del gioco
+	    aggiungiAsteroidiTimer.stop(); // Ferma il timer che aggiunge gli asteroidi
+	    initializeGameObjects(); // Reinizializza gli oggetti del gioco
+	    gameTimer.start(); // Riavvia il timer del gioco
 	}
+	
+	private void initializeGameObjects() {
+	    // Ricrea la navicella principale e una navicella "fantoccio" per test di collisione, se necessario
+	    Nav nave = new Nav("navicella1");
+	    Nav nave2 = new Nav("navicella2");
+	    obj.put(nave.nome, nave);
+	    obj.put(nave2.nome, nave2);
 
+	    // Inizializza gli asteroidi
+	    for (int i = 1; i <= Conf.asteroid_number; i++) {
+	        String nomeAsteroide = "asteroide" + i;
+	        Asteroide asteroide = new Asteroide(nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png");
+	        asteroide.x = 1200-5; // Ad esempio, se la larghezza della finestra di gioco è 1200
+	        Random rand = new Random();
+	        int numeroCasuale = rand.nextInt(441) + 10;
+	        asteroide.y = numeroCasuale;
+	        obj.put(asteroide.name, asteroide);
+	    }
+
+	    // Riavvia il timer per l'aggiunta periodica degli asteroidi
+	    aggiunteEffettuate = 0; // Resetta il conteggio delle aggiunte
+	    aggiungiAsteroidiTimer.start();
+
+	    // Se il gioco supporta altre entità o meccaniche, inizializzale qui
+	}
 
 	
 	// Metodo per creare un cerchio
