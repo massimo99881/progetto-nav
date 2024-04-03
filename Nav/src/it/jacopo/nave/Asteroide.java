@@ -92,9 +92,9 @@ public class Asteroide extends GameObject {
          
         this.speed = 2.0 + Math.random() * 4.0; // Velocità casuale da 2.0 a 5.0
 
-        //shape = imageCache.get(imagePath).getPolygon();
-        //TODO aggiorna shape da image
-        shape = getPolygonFromImage(toBufferedImage(this.image));
+        shape = imageCache.get(imagePath).getPolygon();
+        //TODO piu oneroso: aggiorna shape da image
+        //shape = getPolygonFromImage(toBufferedImage(this.image));
 
         // Imposta una velocità di rotazione casuale
         angoloRotazione = (Math.random() * 2 - 1) * Math.PI / 180;
