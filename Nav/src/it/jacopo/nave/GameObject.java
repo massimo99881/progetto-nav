@@ -57,10 +57,5 @@ public class GameObject extends Cache {
 	public static double calcolaDistanza(int x1, int y1, int x2, int y2) {
 	    return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
 	}
-	public int getX() {
-        return x;
-    }
-    public int getY() {
-        return y;
-    }
+	
 }

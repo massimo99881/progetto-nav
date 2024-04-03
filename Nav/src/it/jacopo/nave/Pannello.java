@@ -288,25 +288,25 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	
 	
 	public void aggiornaGioco() {
-	    // Aggiornamento dei proiettili
+		
+	    // ciclo per ogni proiettile
 	    Iterator<Proiettile> iterProiettili = proiettili.iterator();
 	    while (iterProiettili.hasNext()) {
+	    	
 	        Proiettile proiettile = iterProiettili.next();
 	        proiettile.aggiorna();
 	        
-	     // Controlla se il proiettile ha colpito un bersaglio o è uscito dallo schermo
+	        // Controlla se il proiettile è uscito dallo schermo
 	        boolean proiettileDaRimuovere = proiettile.x < 0 || proiettile.x > getWidth() || proiettile.y < 0 || proiettile.y > getHeight();
 	        if (proiettileDaRimuovere) {
-	            iterProiettili.remove(); // Rimuove il proiettile dalla lista dei proiettili attivi
-	            proiettilePool.releaseProiettile(proiettile); // Rilascia il proiettile nel pool per il riutilizzo
+	        	// Rimuove il proiettile dalla lista dei proiettili attivi
+	            iterProiettili.remove(); 
+	            // Rilascia il proiettile nel pool per il riutilizzo
+	            proiettilePool.releaseProiettile(proiettile); 
 	            continue;
 	        }
-
-	        // Ottiene la Shape del proiettile
-	        Shape shapeProiettile = proiettile.getShape();
 	        
-	        Rectangle boundsProiettile = proiettile.getBounds();
-	        
+	        //ciclo per ogni asteroide
 	        Iterator<Entry<String, GameObject>> iterObj = obj.entrySet().iterator();
 	        while (iterObj.hasNext()) {
 	            Entry<String, GameObject> entry = iterObj.next();
@@ -314,38 +314,66 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            
 	            if (gameObject instanceof Asteroide) {
 	            	
-	            	 //ottimizzazione: prima di calcolare le aree e shape, verifico se i rettangoli collidono
-	            	 Rectangle boundsAsteroide = gameObject.getBounds(); 
-	                 if (boundsProiettile.intersects(boundsAsteroide)) {
+            	 	//prima ottimizzazione: calcolare le aree e shape e verifico se i rettangoli collidono
+            	 	Rectangle boundsAsteroide = gameObject.getBounds(); 
+            	 	Rectangle boundsProiettile = proiettile.getBounds();
+            	 	
+	                if (boundsProiettile.intersects(boundsAsteroide)) {
 	                	Asteroide asteroide = (Asteroide) gameObject;
 	                	
+	                	 
+	                	//Se la distanza è maggiore , salta la verifica dettagliata e continua con il prossimo asteroide
+	                	//asteroide.updateMovement();
+	                	//proiettile.aggiorna();
+	                	double distanza = Math.sqrt(
+	                            Math.pow(asteroide.getX() - proiettile.getX(), 2) +
+	                            Math.pow(asteroide.getY() - proiettile.getY(), 2)
+	                        );
 	                	
-	                	// Prima verifica basata sulla distanza
-	                    double distanza = Math.sqrt(Math.pow(asteroide.getX() - proiettile.getX(), 2) + Math.pow(asteroide.getY() - proiettile.getY(), 2));
-	                    //TODO fix
-	                    if (distanza > 150) {
-	                        // Se la distanza è maggiore , salta la verifica dettagliata e continua con il prossimo asteroide
-	                        continue;
+	                	/**
+	                	 * Soglia di distanza per decidere se effettuare controlli di collisione dettagliati
+	                	 * Una soglia maggiore porta a un rilevamento delle collisioni più preciso ma può aumentare il carico computazionale
+	                	 */
+	                    if (distanza >= 30) {
+	                    	// Rimuovi il proiettile
+	 	                    iterProiettili.remove(); 
+	 	                    // Rilascia il proiettile nel pool per il riutilizzo
+	 	                    proiettilePool.releaseProiettile(proiettile); 
+	 	                    // Aggiorna lo stato dell'asteroide per il colpo ricevuto
+	 	                    asteroide.colpito(); 
+
+	 	                    if (asteroide.getColpiSubiti() >= 5) {
+	 	                    	// Rimuovi l'asteroide se è stato distrutto
+	 	                        iterObj.remove(); 
+	 	                        // Stampa un messaggio in console
+	 	                        System.out.println(asteroide.name + " è stato distrutto"); 
+	 	                    }
+	 	                    // Esci dal ciclo se una collisione è stata trovata
+	 	                    break; 
 	                    }
 	                	
 	                    // eseguire la verifica più dettagliata basata su Area e Shape
 	 	                Area areaAsteroide = new Area(asteroide.getTransf());
-	 	                Area areaProiettile = new Area(shapeProiettile);
-	 	                
+	 	                Area areaProiettile = new Area(proiettile.getShape());
 	 	                areaAsteroide.intersect(areaProiettile);
 	 	                if (!areaAsteroide.isEmpty()) {
-	 	                    // Collisione rilevata, gestisci qui
-	 	                    iterProiettili.remove(); // Rimuovi il proiettile
-	 	                    proiettilePool.releaseProiettile(proiettile); // Rilascia il proiettile nel pool per il riutilizzo
-	 	                    asteroide.colpito(); // Aggiorna lo stato dell'asteroide per il colpo ricevuto
+	 	                	// Rimuovi il proiettile
+	 	                    iterProiettili.remove(); 
+	 	                    // Rilascia il proiettile nel pool per il riutilizzo
+	 	                    proiettilePool.releaseProiettile(proiettile); 
+	 	                    // Aggiorna lo stato dell'asteroide per il colpo ricevuto
+	 	                    asteroide.colpito(); 
 
 	 	                    if (asteroide.getColpiSubiti() >= 5) {
-	 	                        iterObj.remove(); // Rimuovi l'asteroide se è stato distrutto
-	 	                        System.out.println(asteroide.name + " è stato distrutto"); // Stampa un messaggio in console
+	 	                    	// Rimuovi l'asteroide se è stato distrutto
+	 	                        iterObj.remove(); 
+	 	                        // Stampa un messaggio in console
+	 	                        System.out.println(asteroide.name + " è stato distrutto"); 
 	 	                    }
-	 	                    break; // Esci dal ciclo se una collisione è stata trovata
+	 	                    // Esci dal ciclo se una collisione è stata trovata
+	 	                    break; 
 	 	                }
-	                 }
+	                }
 	            }
 	        }
 	    }

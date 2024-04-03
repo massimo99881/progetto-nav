@@ -24,6 +24,13 @@ public class Asteroide extends GameObject {
     private AffineTransform cachedTransform;
     private double prevX, prevY, prevAngoloRotazione;
     
+    public int getX() {
+        return x;
+    }
+    public int getY() {
+        return y;
+    }
+    
  // Metodo per gestire l'essere colpiti da un proiettile
     public void colpito() {
     	colpiSubiti++;
@@ -86,7 +93,7 @@ public class Asteroide extends GameObject {
         this.speed = 2.0 + Math.random() * 4.0; // Velocità casuale da 2.0 a 5.0
 
         //shape = imageCache.get(imagePath).getPolygon();
-        
+        //TODO aggiorna shape da image
         shape = getPolygonFromImage(toBufferedImage(this.image));
 
         // Imposta una velocità di rotazione casuale
@@ -103,6 +110,7 @@ public class Asteroide extends GameObject {
             return; // Non disegnare l'asteroide se è completamente trasparente
         }
     	// Calcola il rettangolo di bounding dell'asteroide
+    	
         int imageWidth = this.image.getWidth(null);
         int imageHeight = this.image.getHeight(null);
         
@@ -122,6 +130,12 @@ public class Asteroide extends GameObject {
                     cachedTransform.translate(x + imageCenterX, y + imageCenterY);
                     cachedTransform.rotate(angoloRotazione, 0, 0);
                     cachedTransform.translate(-imageCenterX, -imageCenterY);
+                    
+                  //TODO da eliminare: mostra shape asteroidi
+//                    AffineTransform at2 = new AffineTransform();
+//            	    at2.translate(x + imageCenterX, y + imageCenterY);
+//            		at2.rotate(angoloRotazione, 0, 0);
+//            	    g.draw(at2.createTransformedShape(shape));
 
                     // Aggiorna lo stato precedente
                     prevX = x;
@@ -138,11 +152,7 @@ public class Asteroide extends GameObject {
 
                 // Reimposta l'opacità a 1.0 per non influenzare il disegno di altri oggetti
                 //g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
-                //TODO da eliminare
-                AffineTransform at2 = new AffineTransform();
-        	    at2.translate(x, y);
-        		at2.rotate(angolo);
-        	    g.draw(at2.createTransformedShape(shape));
+                
             } else {
                 super.draw(g);
             }
