@@ -15,11 +15,7 @@ public class Conf {
 	final static int MAX_AGGIUNTE = 10;
 	final static int Level_timer = 20000;
 	final static int Level_Total = 10;
-//	final static int FRAME_HEIGHT = 800;
-//	final static int FRAME_WIDTH = 1200;
-	
-	 
-	//Methods
-	
+	final static int FRAME_HEIGHT = 800;
+	final static int FRAME_WIDTH = 1200;
 	
 }

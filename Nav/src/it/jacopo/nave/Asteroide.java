@@ -23,6 +23,7 @@ public class Asteroide extends GameObject {
     static final Map<String, Cache> imageCache = new HashMap<String, Cache>();
     private AffineTransform cachedTransform;
     private double prevX, prevY, prevAngoloRotazione;
+    private Pannello pannello; // Riferimento al pannello
     
     public int getX() {
         return x;
@@ -33,6 +34,7 @@ public class Asteroide extends GameObject {
     
  // Metodo per gestire l'essere colpiti da un proiettile
     public void colpito() {
+    	
     	colpiSubiti++;
         // Gestisci il colpo riducendo l'opacità
     	if(opacita>=0) {
@@ -79,9 +81,10 @@ public class Asteroide extends GameObject {
         }
     }
 
-    public Asteroide(String nome, String imagePath) {
+    public Asteroide(Pannello pannello, String nome, String imagePath) {
     	super(nome);
     	this.name=nome;
+    	this.pannello = pannello;
     	
     	// Caricamento e ridimensionamento dell'immagine con riuso tramite cache
     	// Recupera l'immagine dall'immagine cache, supponendo che sia già stata precaricata

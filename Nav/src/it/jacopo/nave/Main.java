@@ -10,17 +10,16 @@ public class Main {
 	public static void main(String[] args) {
 		// Precarica le immagini degli asteroidi
 	    Asteroide.precaricaImmagini();
+	    int h = Conf.FRAME_HEIGHT;
+	    int w = Conf.FRAME_WIDTH;
 		
 		JFrame frame = new JFrame();
 		
-		int FRAME_WIDTH = 1200;
-		int FRAME_HEIGHT = 800;
-		
 		frame.setDefaultCloseOperation(frame.EXIT_ON_CLOSE);
-		frame.setBounds(200, 200, FRAME_WIDTH, FRAME_HEIGHT);
+		frame.setBounds(200, 200, w, h);
 		
 		Pannello pan = new Pannello();
-		pan.setBounds(0, 0, FRAME_WIDTH, FRAME_HEIGHT);
+		pan.setBounds(0, 0, w, h);
 		frame.add(pan);
 		pan.addKeyListener(pan);
 		pan.addMouseMotionListener(pan);
