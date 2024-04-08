@@ -155,6 +155,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
         		    }
                     aggiungiAsteroidiTimer.stop(); // Ferma il Timer
                     JOptionPane.showMessageDialog(null, "Hai vinto!", "Complimenti", JOptionPane.INFORMATION_MESSAGE);
+                    resetGame(); // Chiama resetGame dopo che l'utente ha fatto click su "OK"
                 }
             }
         });
@@ -510,7 +511,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    gameStopped = false;
 	    // Resetta gli asteroidi distrutti
 	    asteroidiDistrutti = 0;
-	    aggiunteEffettuate = 0;
+	    
 	    proiettili.clear(); // Svuota la lista dei proiettili
 	    obj.clear(); // Rimuovi tutti gli oggetti del gioco
 	    nomiAsteroidi.clear(); // Svuota la lista dei nomi degli asteroidi
@@ -525,7 +526,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    caricaAudio(); // Ricarica l'audio
 	    clipAudio.start(); // Riavvia l'audio
 	    clipAudio.loop(Clip.LOOP_CONTINUOUSLY); // Loop continuo
-	    nomiAsteroidi.clear();
 	}
 	
 	private void initializeGameObjects() {
@@ -554,6 +554,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        int numeroCasuale = rand.nextInt(441) + 10;
 	        asteroide.y = numeroCasuale;
 	        obj.put(asteroide.name, asteroide);
+	        nomiAsteroidi.add(nomeAsteroide);
 	    }
 
 	    // Riavvia il timer per l'aggiunta periodica degli asteroidi

@@ -58,10 +58,12 @@ public class Nav extends GameObject{
 	    // Imposta lo spessore del contorno
 	    //g.setStroke(new BasicStroke(3));
 	    
-	    if(speed <= Double.MIN_VALUE) 
-	    	imageToDraw = navImageSpenta; 
-	    else 
-	    	imageToDraw = navImageAccesa;
+		// Decide quale immagine usare basandosi sulla velocità
+	    if (Math.abs(speed) < 0.5) { // Considera la navicella ferma se la velocità è vicina a 0
+	        imageToDraw = navImageSpenta; 
+	    } else {
+	        imageToDraw = navImageAccesa;
+	    }
 	    
 	    int imageWidth = imageToDraw.getWidth();
 	    int imageHeight = imageToDraw.getHeight();

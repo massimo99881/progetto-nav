@@ -12,9 +12,9 @@ public class Conf {
 	final static String SFONDO_JPG = "sfondo.jpg";
 	final static int asteroid_number = 15;
 	final static int _FPSms = 16;
-	final static int MAX_AGGIUNTE = 10;
-	final static int Level_timer = 15000;
-	final static int Level_Total = 10;
+	final static int MAX_AGGIUNTE = 10; //NUMERO ASTEROIDI CHE VENGONO AGGIUNTI OGNI LIVELLO
+	final static int Level_timer = 15000; // 15 SEC
+	final static int Level_Total = 10;  //NUMERO DI LIVELLI
 	final static int FRAME_HEIGHT = 800;
 	final static int FRAME_WIDTH = 1200;
 		

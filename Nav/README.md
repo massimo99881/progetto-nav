@@ -126,9 +126,9 @@ java -jar space-defenders.jar
 - [OK] riposizionamento asteroidi e nav al resize del panel 
 - [OK] resetGame (ricomincia da capo? SI)
 - [OK] sound on/OFF
-- motore non si spegne quando la nav si ferma e il cursore  è lontano
-- fix post-reset game per ricalcolo ascissa asteroidi quando resize panel
-- fix post hai vinto
+- [OK] motore non si spegne quando la nav si ferma e il cursore  è lontano
+- [OK] fix post-reset game per ricalcolo ascissa asteroidi quando resize panel
+- [OK] fix post hai vinto
 - multi-giocatore
 
 ## Contribuire
