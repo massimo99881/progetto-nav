@@ -117,7 +117,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    for (int i = 1; i <= Conf.asteroid_number; i++) { 
 	    	String nomeAsteroide = "asteroide" + i;
 	        Asteroide asteroide = new Asteroide(this, nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png");
-	        //TODO fix 
 	        asteroide.x = Conf.FRAME_WIDTH; // Tutti gli asteroidi partono dalla stessa posizione X iniziale
 	        Random rand = new Random();
 	        int numeroCasuale = rand.nextInt(441) + 10; // Genera un numero casuale tra 10 (incluso) e 451 (escluso)
@@ -245,7 +244,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        if (nave != null) {
 	            double startX = nave.x + 30 * Math.cos(nave.angolo);
 	            double startY = nave.y + 30 * Math.sin(nave.angolo);
-	            Proiettile proiettile = new Proiettile(startX, startY, nave.angolo);
+	            //Proiettile proiettile = new Proiettile(startX, startY, nave.angolo);
+	            Proiettile proiettile = proiettilePool.getProiettile(startX, startY, nave.angolo);
 	            proiettili.add(proiettile);
 	            
 	            riproduciSuonoSparo(); // Riproduce il suono dello sparo
@@ -506,9 +506,11 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	}
 
 	private void resetGame() {
+		Asteroide.precaricaImmagini();
 	    gameStopped = false;
 	    // Resetta gli asteroidi distrutti
 	    asteroidiDistrutti = 0;
+	    aggiunteEffettuate = 0;
 	    proiettili.clear(); // Svuota la lista dei proiettili
 	    obj.clear(); // Rimuovi tutti gli oggetti del gioco
 	    nomiAsteroidi.clear(); // Svuota la lista dei nomi degli asteroidi
@@ -523,6 +525,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    caricaAudio(); // Ricarica l'audio
 	    clipAudio.start(); // Riavvia l'audio
 	    clipAudio.loop(Clip.LOOP_CONTINUOUSLY); // Loop continuo
+	    nomiAsteroidi.clear();
 	}
 	
 	private void initializeGameObjects() {

@@ -66,6 +66,7 @@ public class Asteroide extends GameObject {
         		Random rand = new Random();
                 BufferedImage originalImage = ImageIO.read(new File(path));
                 double scaleFactor = !path.contains("asteroide1.png") ? 0.2 + (0.45 - 0.2) * rand.nextDouble() : 0.2;
+                //double scaleFactor = 0.2 + (0.45 - 0.2) * rand.nextDouble();
                 int newWidth = (int) (originalImage.getWidth() * scaleFactor);
                 int newHeight = (int) (originalImage.getHeight() * scaleFactor);
                 Cache ac = new Cache(originalImage.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH));
