@@ -3,6 +3,8 @@ package it.jacopo.nave;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Polygon;
+import java.awt.Rectangle;
+import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -10,14 +12,19 @@ import java.io.IOException;
 
 import javax.imageio.ImageIO;
 
-public class Nav extends GameObject{
+public class Nav extends Cache{
 	String nome;
 	BufferedImage navImageSpenta; // Immagine della navicella
 	BufferedImage navImageAccesa; // Immagine della navicella
 	BufferedImage imageToDraw ;
+	String name;
+	Polygon shape;
+	double speed;
+	double angolo;
+	int x, y;
 	
 	public Nav(String nome) {
-		super(nome);
+		super();
 		this.nome = nome;
 		this.x = 0;
 		this.y = 0;
@@ -52,7 +59,7 @@ public class Nav extends GameObject{
         }
 	}
 	
-	@Override
+	
 	void draw(Graphics2D g) {
 		//g.setColor(Color.WHITE);
 	    // Imposta lo spessore del contorno
@@ -88,4 +95,14 @@ public class Nav extends GameObject{
 //	    g.draw(at2.createTransformedShape(shape));
 	}
 	
+	
+	Shape getTransf() {
+		AffineTransform at = new AffineTransform();
+		at.translate(x, y);
+		at.rotate(angolo);
+		return at.createTransformedShape(shape);
+	}
+	Rectangle getBounds() {
+	    return getTransf().getBounds();
+	}
 }

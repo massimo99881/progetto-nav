@@ -51,7 +51,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	public int width;
 	public int height;
 	
-	Map<String, GameObject> obj = new HashMap<>();
+	Map<String, Cache> obj = new HashMap<>();
 	private boolean isInCollision = false;
 	boolean gameStopped = false;
 	ArrayList<Proiettile> proiettili = new ArrayList<>();
@@ -248,13 +248,13 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 
 	public void updateShipPosition(String nomeNavicella, int x, int y, double angolo) {
 	    // Cerca la navicella specificata nella mappa degli oggetti di gioco
-	    GameObject navicella = obj.get(nomeNavicella);
+	    Nav navicella =(Nav) obj.get(nomeNavicella);
 
 	    // Se la navicella esiste, aggiorna la sua posizione
 	    if (navicella != null && navicella instanceof Nav) {
 	        navicella.x = x;
 	        navicella.y = y;
-	        ((Nav) navicella).angolo = angolo;
+	        navicella.angolo = angolo;
 	        repaint(); // Rinfresca il pannello per mostrare l'aggiornamento
 	    } else {
 	        // Se la navicella non esiste, potrebbe essere necessario aggiungerla
@@ -280,17 +280,18 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	public void componentResized(ComponentEvent e) {
 	    if (this.getWidth() > 0 && this.larghezzaPrecedente > 0) { // Assicurati che entrambe le larghezze siano valide
 	    	// Aggiorna la posizione delle navicelle
-	        for (Entry<String, GameObject> entry : obj.entrySet()) {
-	            GameObject gameObject = entry.getValue();
+	        for (Entry<String, Cache> entry : obj.entrySet()) {
+	            Cache gameObject = entry.getValue();
 	            if (gameObject instanceof Nav) {
-	                double proporzione = gameObject.x / (double) this.larghezzaPrecedente;
-	                gameObject.x = (int) (proporzione * this.getWidth());
+	            	Nav n = (Nav) gameObject;
+	                double proporzione = n.x / (double) this.larghezzaPrecedente;
+	                n.x = (int) (proporzione * this.getWidth());
 	            }
 	        }
 
 	        // Aggiorna la posizione degli asteroidi
 	        for (String nomeAsteroide : nomiAsteroidi) {
-	            GameObject asteroide = obj.get(nomeAsteroide);
+	            Asteroide asteroide = (Asteroide)obj.get(nomeAsteroide);
 	            if (asteroide != null) {
 	                double proporzione = asteroide.x / (double) this.larghezzaPrecedente;
 	                asteroide.x = (int) (proporzione * this.getWidth());
@@ -404,15 +405,21 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 		controllaCollisioneNavCursore();
 
 		// Crea una copia temporanea della mappa degli oggetti per iterazione sicura
-		Map<String, GameObject> tempObjects = new HashMap<>(obj);
-	    for (Entry<String, GameObject> entry : tempObjects.entrySet()) {
-	        GameObject gameObject = entry.getValue();
+		Map<String, Cache> tempObjects = new HashMap<>(obj);
+	    for (Entry<String, Cache> entry : tempObjects.entrySet()) {
+	        Cache gameObject = entry.getValue();
 	        if (gameObject instanceof Asteroide) {
-	            gameObject.updateMovement();
+	        	Asteroide a = (Asteroide) gameObject;
+	            a.updateMovement();
 	            // Controlla le collisioni con ogni asteroide qui
 	            controllaCollisioneNavAsteroid(entry);
+	            a.draw(g2d);
 	        }
-	        gameObject.draw(g2d);
+	        if (gameObject instanceof Nav) {
+	        	Nav n = (Nav) gameObject;
+	        	n.draw(g2d);
+	        }
+	        
 	    }
 	    
 	 // Imposta il colore e il font per il testo del contatore
@@ -422,8 +429,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    // Disegna il contatore nella parte superiore della finestra di gioco
 	    String contatoreText = "Asteroidi Distrutti: " + asteroidiDistrutti;
 	    g.drawString(contatoreText, 10, 20); // 10 pixel dal bordo sinistro e 20 pixel dal bordo superiore
-	    Nav n = (Nav)obj.get(clientNavicella);
-	    sendPlayerPosition(n.x,n.y,n.angolo); //TODO capire
+	    //Nav n = (Nav)obj.get(clientNavicella);
+	    //sendPlayerPosition(n.x,n.y,n.angolo); //TODO capire
 	}
 
 
@@ -436,21 +443,21 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 		
 		Shape circle = createCircle(cx, cy, 20);
 		Area area2 = new Area(circle); // Area del cerchio
-		
-		area1 = new Area(obj.get(clientNavicella).getTransf()); 
+		Nav navicella = (Nav)obj.get(clientNavicella);
+		area1 = new Area(navicella.getTransf()); 
 		
 		area1.intersect(area2); //area1 diventa l'intersezione fra le 2
 		isInCollision = !area1.isEmpty(); // Aggiorna lo stato di intersezione
 	    
 	    if (isInCollision) {
-	        obj.get(clientNavicella).speed = Double.MIN_VALUE; // Ferma la navicella
+	    	navicella.speed = Double.MIN_VALUE; // Ferma la navicella
 	        area1.reset();
 	    }
 	}
 
 
-	private void controllaCollisioneNavAsteroid(Entry<String, GameObject> entry) {
-		GameObject navicella1 = obj.get(clientNavicella);
+	private void controllaCollisioneNavAsteroid(Entry<String, Cache> entry) {
+		Nav navicella1 = (Nav)obj.get(clientNavicella);
         Asteroide asteroide = (Asteroide) entry.getValue();
 
         // Controllo preliminare bounding box per ridurre i calcoli
@@ -517,20 +524,18 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        }
 	        
 	        //ciclo per ogni asteroide
-	        Iterator<Entry<String, GameObject>> iterObj = obj.entrySet().iterator();
+	        Iterator<Entry<String, Cache>> iterObj = obj.entrySet().iterator();
 	        while (iterObj.hasNext()) {
-	            Entry<String, GameObject> entry = iterObj.next();
-	            GameObject gameObject = entry.getValue();
+	            Entry<String, Cache> entry = iterObj.next();
+	            Cache gameObject = entry.getValue();
 	            
 	            if (gameObject instanceof Asteroide) {
-	            	
+	            	Asteroide asteroide = (Asteroide)gameObject;
             	 	//prima ottimizzazione: calcolare le aree e shape e verifico se i rettangoli collidono
-            	 	Rectangle boundsAsteroide = gameObject.getBounds(); 
+            	 	Rectangle boundsAsteroide = asteroide.getBounds(); 
             	 	Rectangle boundsProiettile = proiettile.getBounds();
             	 	
 	                if (boundsProiettile.intersects(boundsAsteroide)) {
-	                	Asteroide asteroide = (Asteroide) gameObject;
-	                	
 	                	 
 	                	//Se la distanza è maggiore , salta la verifica dettagliata e continua con il prossimo asteroide
 	                	//asteroide.updateMovement();
@@ -684,7 +689,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        	Nav nave = (Nav) obj.get(clientNavicella);
 	            nave.speed += 10;
 	            //TODO capire
-	            //sendPlayerPosition(nave.x, nave.y, nave.angolo);
+	            sendPlayerPosition(nave.x, nave.y, nave.angolo);
 	        }
 	        //repaint();
 	    }
@@ -701,22 +706,22 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
                 // Calcola l'angolo tra la navicella e la posizione del cursore del mouse
                 double angleToMouse = Math.atan2(e.getY() - nave.y, e.getX() - nave.x);
                 nave.angolo = angleToMouse;
-                spara(); // Sparare in direzione dell'angolo aggiornato
+                spara(); 
                 
                 //TODO capire
-                //sendPlayerPosition(nave.x, nave.y, nave.angolo);
+                sendPlayerPosition(nave.x, nave.y, nave.angolo);
             }
         }
 	}
 	
+//	@Override
+//	public void mouseMoved(MouseEvent e) {	
+//		cx = e.getX();
+//		cy = e.getY();
+//		obj.get(clientNavicella).angolo = Math.atan2(((e.getY()) - (obj.get(clientNavicella).y)) , ((e.getX()) - (obj.get(clientNavicella).x))); 
+//	}
+	//TODO capire
 	@Override
-	public void mouseMoved(MouseEvent e) {	
-		cx = e.getX();
-		cy = e.getY();
-		obj.get(clientNavicella).angolo = Math.atan2(((e.getY()) - (obj.get(clientNavicella).y)) , ((e.getX()) - (obj.get(clientNavicella).x))); 
-	}
-	
-	/*@Override
 	public void mouseMoved(MouseEvent e) {  
 	    Nav nave = (Nav) obj.get(clientNavicella);
 	    if (nave != null) { 
@@ -726,6 +731,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        nave.angolo = angolo;
 	        sendPlayerPosition(nave.x, nave.y, nave.angolo);
 	    }
-	}*/
+	}
 	
 }

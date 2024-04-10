@@ -6,13 +6,13 @@ import java.awt.Polygon;
 import java.awt.image.BufferedImage;
 
 public class Cache {
-	private String nome;
+	
 	private Image image;
 	protected BufferedImage bufferedImage;
 	private Polygon polygon;
 	
-	public Cache(String nome) {
-		this.nome = nome;
+	public Cache() {
+		
 	}
 	
 	public Cache(Image image) {

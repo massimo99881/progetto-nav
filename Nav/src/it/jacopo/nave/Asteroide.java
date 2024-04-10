@@ -3,6 +3,8 @@ package it.jacopo.nave;
 import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Polygon;
+import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
@@ -14,7 +16,7 @@ import java.util.Random;
 
 import javax.imageio.ImageIO;
 
-public class Asteroide extends GameObject {
+public class Asteroide extends Cache {
     Image image;
     double angoloRotazione; // Angolo di rotazione per la rotazione casuale
     final double ANGLE_BASE ;
@@ -27,6 +29,12 @@ public class Asteroide extends GameObject {
     private AffineTransform cachedTransform;
     private double prevX, prevY, prevAngoloRotazione;
     private Pannello pannello; // Riferimento al pannello
+    String name;
+	Polygon shape;
+	double speed;
+	double angolo;
+    int x, y;
+    protected int raggio;
     
     public int getX() {
         return x;
@@ -86,7 +94,7 @@ public class Asteroide extends GameObject {
     }
 
     public Asteroide(Pannello pannello, String nome, String imagePath) {
-    	super(nome);
+    	super();
     	this.name=nome;
     	this.pannello = pannello;
     	
@@ -111,7 +119,6 @@ public class Asteroide extends GameObject {
         this.raggio = Math.min(this.image.getWidth(null), this.image.getHeight(null)) / 2;
     }
 
-    @Override
     void draw(Graphics2D g) {
     	if (opacita <= 0) {
             return; // Non disegnare l'asteroide se è completamente trasparente
@@ -160,17 +167,12 @@ public class Asteroide extends GameObject {
                 // Reimposta l'opacità a 1.0 per non influenzare il disegno di altri oggetti
                 //g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
                 
-            } else {
-                super.draw(g);
-            }
+            } 
         }
     }
 
     
-
-    @Override
     void updateMovement() {
-        
 
         // Aggiorna la velocità con una variazione casuale
         speed += (Math.random() - 0.5) * ACCELERATION_CHANGE;
@@ -191,7 +193,6 @@ public class Asteroide extends GameObject {
     }
 
     
-    @Override
     Shape getTransf() {
         AffineTransform at = new AffineTransform();
 
@@ -213,6 +214,8 @@ public class Asteroide extends GameObject {
         // Applica la trasformazione alla forma dell'asteroide
         return at.createTransformedShape(shape);
     }
-
+    Rectangle getBounds() {
+	    return getTransf().getBounds();
+	}
 }
 
