@@ -248,20 +248,26 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 
 	public void updateShipPosition(String nomeNavicella, int x, int y, double angolo) {
 	    // Cerca la navicella specificata nella mappa degli oggetti di gioco
-	    Nav navicella =(Nav) obj.get(nomeNavicella);
+	    Nav navicella = (Nav) obj.get(nomeNavicella);
 
-	    // Se la navicella esiste, aggiorna la sua posizione
-	    if (navicella != null && navicella instanceof Nav) {
-	        navicella.x = x;
-	        navicella.y = y;
-	        navicella.angolo = angolo;
-	        repaint(); // Rinfresca il pannello per mostrare l'aggiornamento
+	    // Se la navicella esiste, verifica se la posizione o l'angolo sono cambiati
+	    if (navicella != null) {
+	        // Controlla se ci sono stati cambiamenti significativi
+	        boolean isPositionChanged = navicella.x != x || navicella.y != y;
+	        boolean isAngleChanged = navicella.angolo != angolo;
+
+	        // Aggiorna solo se la posizione o l'angolo sono cambiati
+	        if (isPositionChanged || isAngleChanged) {
+	            navicella.x = x;
+	            navicella.y = y;
+	            navicella.angolo = angolo;
+	            //repaint(); // Rinfresca il pannello solo se c'è stato un cambiamento
+	        }
 	    } else {
-	        // Se la navicella non esiste, potrebbe essere necessario aggiungerla
-	        // Questo dipende dalla logica del tuo gioco e da come vuoi gestire le navicelle avversarie
 	        System.err.println("Navicella non trovata: " + nomeNavicella);
 	    }
 	}
+
 
 
 	
