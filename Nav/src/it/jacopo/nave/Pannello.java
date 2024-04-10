@@ -37,15 +37,19 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 public class Pannello extends JPanel implements KeyListener, MouseMotionListener, ComponentListener{
 	
-	private static final long serialVersionUID = 5629029799881632075L;
+	private GameClient client;
+	
 	private ProiettilePool proiettilePool = new ProiettilePool();
 	private int sfondoX = 0;
 	private final int VELOCITA_SFONDO = -1; // Sposta lo sfondo di 1 pixel a ogni tick del timer verso sinistra
 	
-	public static int width;
-	public static int height;
+	public int width;
+	public int height;
 	
 	Map<String, GameObject> obj = new HashMap<>();
 	private boolean isInCollision = false;
@@ -64,10 +68,19 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	private final long SHOOT_INTERVAL = 100; // Intervallo tra gli spari in millisecondi
 	private int asteroidiDistrutti = 0;
 	private int larghezzaPrecedente;
+	private String clientNavicella = "";
 	
 	private Clip clipAudio;
 	
 	public Pannello() {
+		try {
+            this.client = new GameClient();
+            this.client.startClient(this::handleNetworkMessage);
+        } catch (IOException e) {
+            System.err.println("Errore nell'inizializzare il client di rete: " + e.getMessage());
+            // Gestisci l'errore come preferisci, es. mostrando un messaggio all'utente
+        }
+		
 		Nav nave = new Nav("navicella1");  //nave principale	
 		Nav nave2 = new Nav("navicella2"); //nave fantoccio per test collisioni
 		// Posizionamento della seconda navicella in basso a destra
@@ -180,7 +193,77 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
         caricaAudio(); // Carica l'audio
         clipAudio.start(); // Avvia l'audio
         clipAudio.loop(Clip.LOOP_CONTINUOUSLY); // Loop continuo
+        
+        
+        
 	}
+	
+	private void handleNetworkMessage(String message) {
+	    // Analizza il messaggio JSON
+		System.out.println(message);
+		
+	    JsonObject jsonMessage = JsonParser.parseString(message).getAsJsonObject();
+	    
+
+	    // Estrai il tipo di evento dal messaggio
+	    String eventType = jsonMessage.get("tipo").getAsString();
+
+	    // Gestisci il tipo di evento
+	    switch (eventType) {
+	        case "tipoNavicella":
+	            // Imposta il tipo di navicella per questo client
+	            this.clientNavicella = jsonMessage.get("navicella").getAsString();
+	            break;
+	        case "posizione":
+	            // Estrai il nome della navicella e le coordinate dal messaggio
+	            String nomeNavicella = jsonMessage.get("nome").getAsString();
+	            int x = jsonMessage.get("x").getAsInt();
+	            int y = jsonMessage.get("y").getAsInt();
+	            double angolo = jsonMessage.get("angolo").getAsDouble();
+	            if (!nomeNavicella.equals(this.clientNavicella)) {
+	                // Aggiorna la posizione della navicella avversaria
+	            	updateShipPosition(nomeNavicella, x, y, angolo);
+	            }
+	            break;
+	        // Aggiungi qui altri casi se necessario
+	        default:
+	            System.err.println("Tipo di evento sconosciuto: " + eventType);
+	            break;
+	    }
+	}
+
+
+	
+	public void sendPlayerPosition(int x, int y, double angolo) {
+	    JsonObject jsonMessage = new JsonObject();
+	    jsonMessage.addProperty("tipo", "posizione");
+	    jsonMessage.addProperty("nome", clientNavicella);
+	    jsonMessage.addProperty("x", x);
+	    jsonMessage.addProperty("y", y);
+	    jsonMessage.addProperty("angolo", angolo); // Aggiungi l'angolo
+	    client.send(jsonMessage.toString());
+	}
+
+
+
+	public void updateShipPosition(String nomeNavicella, int x, int y, double angolo) {
+	    // Cerca la navicella specificata nella mappa degli oggetti di gioco
+	    GameObject navicella = obj.get(nomeNavicella);
+
+	    // Se la navicella esiste, aggiorna la sua posizione
+	    if (navicella != null && navicella instanceof Nav) {
+	        navicella.x = x;
+	        navicella.y = y;
+	        ((Nav) navicella).angolo = angolo;
+	        repaint(); // Rinfresca il pannello per mostrare l'aggiornamento
+	    } else {
+	        // Se la navicella non esiste, potrebbe essere necessario aggiungerla
+	        // Questo dipende dalla logica del tuo gioco e da come vuoi gestire le navicelle avversarie
+	        System.err.println("Navicella non trovata: " + nomeNavicella);
+	    }
+	}
+
+
 	
 	private void caricaAudio() {
 	    try {
@@ -241,7 +324,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        }
 	        lastShootTime = currentTime; // Aggiorna l'ultimo tempo di sparo
 
-	        Nav nave = (Nav) obj.get("navicella1");
+	        Nav nave = (Nav) obj.get(clientNavicella);
 	        if (nave != null) {
 	            double startX = nave.x + 30 * Math.cos(nave.angolo);
 	            double startY = nave.y + 30 * Math.sin(nave.angolo);
@@ -282,6 +365,11 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	@Override
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
+		if (clientNavicella == null || !obj.containsKey(clientNavicella)) {
+	        // La navicella non è stata ancora impostata o non è presente nella mappa,
+	        // quindi non procedere ulteriormente per evitare NullPointerException.
+	        return;
+	    }
 		
 		this.width = this.getWidth();
         this.height = this.getHeight();
@@ -334,28 +422,35 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    // Disegna il contatore nella parte superiore della finestra di gioco
 	    String contatoreText = "Asteroidi Distrutti: " + asteroidiDistrutti;
 	    g.drawString(contatoreText, 10, 20); // 10 pixel dal bordo sinistro e 20 pixel dal bordo superiore
+	    Nav n = (Nav)obj.get(clientNavicella);
+	    sendPlayerPosition(n.x,n.y,n.angolo); //TODO capire
 	}
 
 
 	private void controllaCollisioneNavCursore() {
-//		Nav navicella1 = (Nav) obj.get("navicella1");
+		if (clientNavicella == null || !obj.containsKey(clientNavicella)) {
+	        // La navicella non è stata ancora impostata o non è presente nella mappa,
+	        // quindi non procedere ulteriormente per evitare NullPointerException.
+	        return;
+	    }
+		
 		Shape circle = createCircle(cx, cy, 20);
 		Area area2 = new Area(circle); // Area del cerchio
 		
-		area1 = new Area(obj.get("navicella1").getTransf()); 
+		area1 = new Area(obj.get(clientNavicella).getTransf()); 
 		
 		area1.intersect(area2); //area1 diventa l'intersezione fra le 2
 		isInCollision = !area1.isEmpty(); // Aggiorna lo stato di intersezione
 	    
 	    if (isInCollision) {
-	        obj.get("navicella1").speed = Double.MIN_VALUE; // Ferma la navicella
+	        obj.get(clientNavicella).speed = Double.MIN_VALUE; // Ferma la navicella
 	        area1.reset();
 	    }
 	}
 
 
 	private void controllaCollisioneNavAsteroid(Entry<String, GameObject> entry) {
-		GameObject navicella1 = obj.get("navicella1");
+		GameObject navicella1 = obj.get(clientNavicella);
         Asteroide asteroide = (Asteroide) entry.getValue();
 
         // Controllo preliminare bounding box per ridurre i calcoli
@@ -571,14 +666,25 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
         return new java.awt.geom.Ellipse2D.Double(x - r, y - r, 2 * r, 2 * r);
     }
     
+    // Metodi per inviare aggiornamenti al server basati sulle azioni dell'utente
+    // Ad esempio, quando l'utente muove la navicella o spara
+
+    // Override dei metodi dell'interfaccia KeyListener e MouseMotionListener
+    // per gestire l'input dell'utente e inviare aggiornamenti al server
+
+    
 	@Override
 	public void keyTyped(KeyEvent e) {}
 	
 	@Override
 	public void keyPressed(KeyEvent e) {
+		
 	    if (e.getKeyCode() == KeyEvent.VK_SPACE) {
 	        if (!isInCollision) {
-	            obj.get("navicella1").speed += 10;
+	        	Nav nave = (Nav) obj.get(clientNavicella);
+	            nave.speed += 10;
+	            //TODO capire
+	            //sendPlayerPosition(nave.x, nave.y, nave.angolo);
 	        }
 	        //repaint();
 	    }
@@ -590,26 +696,36 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	@Override
 	public void mouseDragged(MouseEvent e) {
 		if (staSparando) {
-            Nav nave = (Nav) obj.get("navicella1");
+            Nav nave = (Nav) obj.get(clientNavicella);
             if (nave != null) {
                 // Calcola l'angolo tra la navicella e la posizione del cursore del mouse
                 double angleToMouse = Math.atan2(e.getY() - nave.y, e.getX() - nave.x);
                 nave.angolo = angleToMouse;
                 spara(); // Sparare in direzione dell'angolo aggiornato
+                
+                //TODO capire
+                //sendPlayerPosition(nave.x, nave.y, nave.angolo);
             }
         }
 	}
+	
 	@Override
 	public void mouseMoved(MouseEvent e) {	
 		cx = e.getX();
 		cy = e.getY();
-		//calcolo in radianti dell'angolo della retta fra cursore e nav
-		obj.get("navicella1").angolo = Math.atan2(((e.getY()) - (obj.get("navicella1").y)) , ((e.getX()) - (obj.get("navicella1").x))); 
-		
+		obj.get(clientNavicella).angolo = Math.atan2(((e.getY()) - (obj.get(clientNavicella).y)) , ((e.getX()) - (obj.get(clientNavicella).x))); 
 	}
 	
-	
-	
-	
+	/*@Override
+	public void mouseMoved(MouseEvent e) {  
+	    Nav nave = (Nav) obj.get(clientNavicella);
+	    if (nave != null) { 
+	        cx = e.getX();
+	        cy = e.getY();
+	        double angolo = Math.atan2(e.getY() - nave.y, e.getX() - nave.x);
+	        nave.angolo = angolo;
+	        sendPlayerPosition(nave.x, nave.y, nave.angolo);
+	    }
+	}*/
 	
 }

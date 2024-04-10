@@ -30,6 +30,8 @@ public class Main {
 		
 		 // Ora che il frame e il pannello sono visibili, richiedi il focus.
 	    pan.requestFocusInWindow();
+	    
+	    
 	}
 
 }

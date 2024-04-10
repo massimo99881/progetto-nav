@@ -19,6 +19,9 @@ public class Asteroide extends GameObject {
     double angoloRotazione; // Angolo di rotazione per la rotazione casuale
     final double ANGLE_BASE ;
     private int colpiSubiti = 0;
+    final double ACCELERATION_CHANGE = 0.1; // Piccole variazioni nella velocità
+    final double MIN_SPEED = 0.5;
+    final double MAX_SPEED = 1.5;
     float opacita = 1.0f; // Opacità iniziale al 100%
     static final Map<String, Cache> imageCache = new HashMap<String, Cache>();
     private AffineTransform cachedTransform;
@@ -119,7 +122,7 @@ public class Asteroide extends GameObject {
         int imageHeight = this.image.getHeight(null);
         
         // Controllo se l'asteroide è dentro i confini dello schermo
-        if (x + imageWidth >= 0 && x <= Pannello.width && y + imageHeight >= 0 && y <= Pannello.height) {
+        if (x + imageWidth >= 0 && x <= pannello.width && y + imageHeight >= 0 && y <= pannello.height) {
         	if (this.image != null && opacita > 0 /* && !gameStopped */) {
         		
         		// Controlla se la posizione o l'angolo di rotazione sono cambiati
@@ -163,9 +166,7 @@ public class Asteroide extends GameObject {
         }
     }
 
-    final double ACCELERATION_CHANGE = 0.1; // Piccole variazioni nella velocità
-    final double MIN_SPEED = 0.5;
-    final double MAX_SPEED = 2.0;
+    
 
     @Override
     void updateMovement() {

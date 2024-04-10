@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src"/>
+	<classpathentry including="it/" kind="src" path="src"/>
 	<classpathentry kind="src" path="resources/audio"/>
 	<classpathentry kind="src" path="resources/img"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
@@ -8,5 +8,6 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="C:/le_tue_lezioni/jacopo/progetto-jacopo/Nav/lib/gson-2.10.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
