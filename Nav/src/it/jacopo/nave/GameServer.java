@@ -14,8 +14,7 @@ public class GameServer {
     private final List<Handler> clients = new CopyOnWriteArrayList<>();
     private int playerCount = 0;
     private final Map<String, Dimension> gameDimensions = new HashMap<>();
-    private List<Proiettile> proiettiliAttivi = new CopyOnWriteArrayList<>();
-    private Timer timerAggiornamentoProiettili;
+    private ProiettilePool proiettilePool = ProiettilePool.getInstance(); 
 
     public GameServer() throws IOException {
         serverSocket = new ServerSocket(port);
@@ -34,7 +33,7 @@ public class GameServer {
     }
 
     private void iniziaTimerAggiornamentiProiettili() {
-        timerAggiornamentoProiettili = new Timer(true);
+    	Timer timerAggiornamentoProiettili = new Timer(true);
         timerAggiornamentoProiettili.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
@@ -45,27 +44,27 @@ public class GameServer {
     }
 
     private void inviaAggiornamentiProiettili() {
-        synchronized (proiettiliAttivi) {
-            Iterator<Proiettile> iterator = proiettiliAttivi.iterator();
-            while (iterator.hasNext()) {
-                Proiettile proiettile = iterator.next();
-                proiettile.aggiorna();
+    	List<Proiettile> proiettiliAttivi = proiettilePool.getActiveProiettili();
+    	Iterator<Proiettile> iterator = proiettiliAttivi.iterator();
+        while (iterator.hasNext()) {
+            Proiettile proiettile = iterator.next();
+            proiettile.aggiorna();
 
-                if (!proiettileValido(proiettile)) {
-                    iterator.remove();
-                } else {
-                    
-                    for (Handler client : clients) {
-                        if (!client.getPlayerType().equals(proiettile.getMittente())) {
-                        	JsonObject jsonMessage = new JsonObject();
-                            jsonMessage.addProperty("tipo", "sparo");
-                            jsonMessage.addProperty("mittente", proiettile.getMittente());
-                            jsonMessage.addProperty("x", proiettile.getX());
-                            jsonMessage.addProperty("y", proiettile.getY());
-                            jsonMessage.addProperty("angolo", proiettile.angolo);
-                        	System.out.println("GameServer > "+client.getPlayerType()+" sparo:"+jsonMessage.toString());
-                            client.sendMessage(jsonMessage.toString());
-                        }
+            if (!proiettileValido(proiettile)) {
+            	iterator.remove();  // Rimuovi il proiettile dalla lista dei proiettili attivi
+                proiettilePool.releaseProiettile(proiettile);  // Restituisci il proiettile al pool
+            } else {
+            	// Invia aggiornamenti a tutti i clienti tranne al mittente del proiettile
+                for (Handler client : clients) {
+                    if (!client.getPlayerType().equals(proiettile.getMittente())) {
+                    	JsonObject jsonMessage = new JsonObject();
+                        jsonMessage.addProperty("tipo", "sparo");
+                        jsonMessage.addProperty("mittente", proiettile.getMittente());
+                        jsonMessage.addProperty("x", proiettile.getX());
+                        jsonMessage.addProperty("y", proiettile.getY());
+                        jsonMessage.addProperty("angolo", proiettile.angolo);
+                    	//System.out.println("GameServer > "+client.getPlayerType()+" sparo:"+jsonMessage.toString());
+                        client.sendMessage(jsonMessage.toString());
                     }
                 }
             }
@@ -91,12 +90,6 @@ public class GameServer {
         return false;
     }
     
-    public synchronized void aggiungiProiettileAttivo(Proiettile proiettile) {
-        proiettiliAttivi.add(proiettile);
-        inviaAggiornamentiProiettili();
-    }
-
-
     public void start() {
         while (true) {
             try {
@@ -169,25 +162,9 @@ public class GameServer {
                     server.setGameDimensions(playerType, larghezza, altezza);
                     break;
                 case "posizione":
-                    // Assumendo che il messaggio contenga le chiavi "x", "y", e "angolo"
-                    int x = receivedJson.get("x").getAsInt();
-                    int y = receivedJson.get("y").getAsInt();
-                    double angolo = receivedJson.get("angolo").getAsDouble();
-                    // Qui potresti voler fare qualcosa con queste informazioni, come aggiornare la posizione di una navicella
-                    // Ma per ora, semplicemente le inoltriamo agli altri client
+                case "sparo":
                     server.broadcast(data, playerType);
                     break;
-                case "sparo":
-                    // Assumendo che il messaggio contenga le coordinate di partenza del proiettile e l'angolo
-                    double startX = receivedJson.get("x").getAsDouble();
-                    double startY = receivedJson.get("y").getAsDouble();
-                    double angoloSparo = receivedJson.get("angolo").getAsDouble();
-                    // Creare un nuovo proiettile e aggiungerlo alla lista dei proiettili attivi nel server
-                    Proiettile proiettile = new Proiettile(startX, startY, angoloSparo, playerType); // Nota: assicurati che la classe Proiettile abbia un costruttore adeguato
-                    System.out.println("GameServer:sparo: "+receivedJson);
-                    server.aggiungiProiettileAttivo(proiettile);
-                    break;
-                // Aggiungi qui altri casi se necessario
                 default:
                     System.err.println("GameServer: Tipo di evento sconosciuto: " + tipo);
                     break;
@@ -216,9 +193,5 @@ public class GameServer {
         }
     }
 
-	public void removeClient(it.jacopo.nave.Handler clientHandler) {
-		clients.remove(clientHandler);
-	    System.out.println("Client disconnesso: " + clientHandler.getPlayerType());
-	}
 
 }

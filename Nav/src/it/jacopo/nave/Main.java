@@ -18,7 +18,8 @@ public class Main {
 		frame.setDefaultCloseOperation(frame.EXIT_ON_CLOSE);
 		frame.setBounds(200, 200, w, h);
 		
-		Pannello pan = new Pannello();
+		ProiettilePool proiettilePool = ProiettilePool.getInstance();
+        Pannello pan = new Pannello(proiettilePool);
 		pan.setBounds(0, 0, w, h);
 		frame.add(pan);
 		pan.addKeyListener(pan);

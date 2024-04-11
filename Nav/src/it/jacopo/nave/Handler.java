@@ -57,7 +57,10 @@ public class Handler implements Runnable {
                         double startX = receivedJson.get("x").getAsDouble();
                         double startY = receivedJson.get("y").getAsDouble();
                         double angolo = receivedJson.get("angolo").getAsDouble();
-                        server.aggiungiProiettileAttivo(new Proiettile(startX, startY, angolo, this.playerType));
+
+                        // Use ProiettilePool directly
+                        Proiettile proiettile = ProiettilePool.getInstance().getProiettile(startX, startY, angolo, this.playerType);
+                        server.broadcast(proiettile.toJson().toString(), this.playerType);
                         System.out.println("Handler < "+this.playerType+" sparo: "+receivedJson);
                         break;
                     default:
@@ -93,7 +96,8 @@ public class Handler implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        server.removeClient(this);
+        // Correctly using server's method to remove this client handler
+//        server.removeClient(this);
         System.out.println("Client rimosso: " + playerType);
     }
 }

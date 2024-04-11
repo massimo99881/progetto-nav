@@ -6,6 +6,8 @@ import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
 
+import com.google.gson.JsonObject;
+
 public class Proiettile  {
 	private static int idCounter = 0;  // Contatore statico per generare ID unici
     private int id;
@@ -78,9 +80,20 @@ public class Proiettile  {
         return new Rectangle((int)x, (int)y, 5, 5);
     }
     
-    public void reset(double x, double y, double angolo) {
+    public void reset(double x, double y, double angolo, String mittente) {
         this.x = x;
         this.y = y;
         this.angolo = angolo;
+        this.mittente = mittente;
+    }
+    
+    public JsonObject toJson() {
+        JsonObject obj = new JsonObject();
+        obj.addProperty("tipo", "sparo");
+        obj.addProperty("x", this.x);
+        obj.addProperty("y", this.y);
+        obj.addProperty("angolo", this.angolo);
+        obj.addProperty("mittente", this.mittente);
+        return obj;
     }
 }

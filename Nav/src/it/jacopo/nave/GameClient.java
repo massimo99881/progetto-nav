@@ -20,10 +20,11 @@ public class GameClient {
     private final int serverPort = 8080;
     private volatile boolean running = true; // Flag per controllare il ciclo di ricezione
     private String playerType;
-    private Map<String, Proiettile> proiettili = new HashMap<>();
+    private ProiettilePool proiettilePool ;
 
 
-    public GameClient() throws IOException {
+    public GameClient(ProiettilePool proiettilePool) throws IOException {
+    	this.proiettilePool = proiettilePool;
         try {
             socket = new Socket(serverAddress, serverPort);
             out = new PrintWriter(socket.getOutputStream(), true);
@@ -104,16 +105,10 @@ public class GameClient {
                 double xP = receivedJson.get("x").getAsDouble();
                 double yP = receivedJson.get("y").getAsDouble();
                 double angoloP = receivedJson.has("angolo") ? receivedJson.get("angolo").getAsDouble() : 0; // Assumiamo che il server invii anche l'angolo
-
-                Proiettile proiettile = proiettili.get(mittente);
-                if (proiettile == null) {
-                    // Se il proiettile non esiste, significa che è la prima volta che riceviamo questo mittente come ID, quindi lo aggiungiamo
-                    proiettile = new Proiettile(xP, yP, angoloP, mittente);
-                    proiettili.put(mittente, proiettile);
-                } else {
-                    // Se il proiettile esiste già, semplicemente aggiorniamo la sua posizione e angolo
-                    proiettile.reset(xP, yP, angoloP);
-                }
+                String idP = receivedJson.get("mittente").getAsString();
+                
+                proiettilePool.getProiettile(xP, yP, angoloP, mittente);
+                
                 System.out.println("GameClient:sparo: "+receivedJson);
                 break;
 
@@ -128,7 +123,8 @@ public class GameClient {
 
     public static void main(String[] args) {
         try {
-            GameClient client = new GameClient();
+        	ProiettilePool proiettilePool = ProiettilePool.getInstance();
+            GameClient client = new GameClient(proiettilePool);
             client.startClient(message -> {
                 // Qui puoi decidere come gestire i messaggi ricevuti
             });

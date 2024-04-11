@@ -45,13 +45,10 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	
 	private GameClient client;
 	
-	private ProiettilePool proiettilePool = new ProiettilePool();
 	private int sfondoX = 0;
 	private final int VELOCITA_SFONDO = -1; // Sposta lo sfondo di 1 pixel a ogni tick del timer verso sinistra
-	
 	public int width;
 	public int height;
-	
 	Map<String, Cache> obj = new HashMap<>();
 	private boolean isInCollision = false;
 	boolean gameStopped = false;
@@ -70,18 +67,21 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	private int asteroidiDistrutti = 0;
 	private int larghezzaPrecedente;
 	private String clientNavicella = "";
-	
+	private ProiettilePool proiettilePool;
 	private Clip clipAudio;
 	
-	
-	public Pannello() {
-		try {
-            this.client = new GameClient();
+	private void setupNetworking() {
+        try {
+            this.client = new GameClient(proiettilePool);
             this.client.startClient(this::handleNetworkMessage);
         } catch (IOException e) {
             System.err.println("Errore nell'inizializzare il client di rete: " + e.getMessage());
-            // Gestisci l'errore come preferisci, es. mostrando un messaggio all'utente
         }
+    }
+	
+	public Pannello(ProiettilePool proiettilePool) {
+		this.proiettilePool = proiettilePool;
+		setupNetworking();
 		
 		
 		
@@ -236,9 +236,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            double angoloP = jsonMessage.get("angolo").getAsDouble();
 	            System.out.println("Pannello:sparo: "+jsonMessage);
 	            //Proiettile proiettile = new Proiettile(startX, startY, angoloP);
-	            if (!mittente.equals(this.clientNavicella)) { // Verifica che il proiettile non provenga dalla propria navicella
-	                Proiettile proiettile = proiettilePool.getProiettile(startX, startY, angoloP);
-	                //proiettili.add(proiettile);
+	            if (!mittente.equals(this.clientNavicella)) { // Assicurati che il proiettile non sia della propria navicella
+	                Proiettile proiettile = proiettilePool.getProiettile(startX, startY, angoloP, mittente);
 	                SwingUtilities.invokeLater(() -> proiettili.add(proiettile));
 	            }
 	            
@@ -370,7 +369,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            double startX = nave.x + 30 * Math.cos(nave.angolo);
 	            double startY = nave.y + 30 * Math.sin(nave.angolo);
 	            //Proiettile proiettile = new Proiettile(startX, startY, nave.angolo);
-	            Proiettile proiettile = proiettilePool.getProiettile(startX, startY, nave.angolo);
+	            Proiettile proiettile = proiettilePool.getProiettile(startX, startY, nave.angolo, clientNavicella);
 	            proiettili.add(proiettile);
 	            
 	            riproduciSuonoSparo(); // Riproduce il suono dello sparo
@@ -446,9 +445,11 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    }
 	    
 	    // Disegna i proiettili
-        for (Proiettile proiettile : proiettili) {
-            proiettile.disegna(g2d);
-        }
+	    List<Proiettile> activeProiettili = proiettilePool.getActiveProiettili();
+	    for (Proiettile proiettile : activeProiettili) {
+	        proiettile.disegna(g2d);
+	    }
+	    
         // Controlla collisioni tra la navicella e il cursore
 		controllaCollisioneNavCursore();
 
