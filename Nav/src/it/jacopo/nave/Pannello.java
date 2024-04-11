@@ -229,13 +229,19 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            	updateShipPosition(nomeNavicella, x, y, angolo);
 	            }
 	            break;
-	        case "aggiornamentoProiettile":
+	        case "sparo":
+	        	String mittente = jsonMessage.get("mittente").getAsString();
 	            double startX = jsonMessage.get("x").getAsDouble();
 	            double startY = jsonMessage.get("y").getAsDouble();
 	            double angoloP = jsonMessage.get("angolo").getAsDouble();
-	            System.out.println("Pannello:aggiornamentoProiettile: "+jsonMessage);
-	            Proiettile proiettile = new Proiettile(startX, startY, angoloP);
-	            SwingUtilities.invokeLater(() -> proiettili.add(proiettile));
+	            System.out.println("Pannello:sparo: "+jsonMessage);
+	            //Proiettile proiettile = new Proiettile(startX, startY, angoloP);
+	            if (!mittente.equals(this.clientNavicella)) { // Verifica che il proiettile non provenga dalla propria navicella
+	                Proiettile proiettile = proiettilePool.getProiettile(startX, startY, angoloP);
+	                //proiettili.add(proiettile);
+	                SwingUtilities.invokeLater(() -> proiettili.add(proiettile));
+	            }
+	            
 	            break;
 	        default:
 	            System.err.println("Pannello: Tipo di evento sconosciuto: " + eventType);

@@ -52,13 +52,13 @@ public class Handler implements Runnable {
                         server.setGameDimensions(this.playerType, larghezza, altezza);
                         System.out.println("Dimensioni gioco ricevute da " + clientSocket.getInetAddress().getHostAddress() + ": " + larghezza + "x" + altezza);
                         break;
-                    case "aggiornamentoProiettile":
+                    case "sparo":
                         // Gestione di un messaggio di sparo
                         double startX = receivedJson.get("x").getAsDouble();
                         double startY = receivedJson.get("y").getAsDouble();
                         double angolo = receivedJson.get("angolo").getAsDouble();
                         server.aggiungiProiettileAttivo(new Proiettile(startX, startY, angolo, this.playerType));
-                        System.out.println("Handler:aggiornamentoProiettile: "+receivedJson);
+                        System.out.println("Handler < "+this.playerType+" sparo: "+receivedJson);
                         break;
                     default:
                         System.err.println("Tipo di evento sconosciuto: " + tipo);

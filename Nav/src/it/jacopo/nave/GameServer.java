@@ -54,13 +54,29 @@ public class GameServer {
                 if (!proiettileValido(proiettile)) {
                     iterator.remove();
                 } else {
-                    JsonObject jsonMessage = new JsonObject();
-                    jsonMessage.addProperty("tipo", "aggiornamentoProiettile");
-                    jsonMessage.addProperty("x", proiettile.getX());
-                    jsonMessage.addProperty("y", proiettile.getY());
-                    jsonMessage.addProperty("angolo", proiettile.angolo);
-                    broadcast(jsonMessage.toString(), proiettile.getMittente());
+                    
+                    for (Handler client : clients) {
+                        if (!client.getPlayerType().equals(proiettile.getMittente())) {
+                        	JsonObject jsonMessage = new JsonObject();
+                            jsonMessage.addProperty("tipo", "sparo");
+                            jsonMessage.addProperty("mittente", proiettile.getMittente());
+                            jsonMessage.addProperty("x", proiettile.getX());
+                            jsonMessage.addProperty("y", proiettile.getY());
+                            jsonMessage.addProperty("angolo", proiettile.angolo);
+                        	System.out.println("GameServer > "+client.getPlayerType()+" sparo:"+jsonMessage.toString());
+                            client.sendMessage(jsonMessage.toString());
+                        }
+                    }
                 }
+            }
+        }
+    }
+    
+    public synchronized void broadcast(String message, String excludePlayerType) {
+        for (Handler client : clients) {
+            if (!client.getPlayerType().equals(excludePlayerType)) {
+            	System.out.println("GameServer > "+client.getPlayerType()+" posizione:"+message);
+                client.sendMessage(message);
             }
         }
     }
@@ -78,14 +94,6 @@ public class GameServer {
     public synchronized void aggiungiProiettileAttivo(Proiettile proiettile) {
         proiettiliAttivi.add(proiettile);
         inviaAggiornamentiProiettili();
-    }
-
-    public synchronized void broadcast(String message, String excludePlayerType) {
-        for (Handler client : clients) {
-            if (!client.getPlayerType().equals(excludePlayerType)) {
-                client.sendMessage(message);
-            }
-        }
     }
 
 

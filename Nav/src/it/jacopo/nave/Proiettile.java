@@ -7,8 +7,12 @@ import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
 
 public class Proiettile  {
+	private static int idCounter = 0;  // Contatore statico per generare ID unici
+    private int id;
     double x, y; // Posizione del proiettile
     String mittente;
+    double velocita = 7; // Velocità del proiettile
+    double angolo;
     
     public double getX() {
         return x;
@@ -18,8 +22,11 @@ public class Proiettile  {
     public double getY() {
         return y;
     }
-    double velocita = 7; // Velocità del proiettile
-    double angolo;
+    
+    // Getter per l'ID
+    public int getId() {
+        return id;
+    }
     
     public Proiettile(double x, double y, double angolo) {
         this.x = x;
