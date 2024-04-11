@@ -1,8 +1,16 @@
 package it.jacopo.nave;
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
+
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 public class GameClient {
     private Socket socket;
@@ -10,71 +18,122 @@ public class GameClient {
     private BufferedReader in;
     private final String serverAddress = "127.0.0.1";
     private final int serverPort = 8080;
-    private boolean running = true; // Flag per controllare il ciclo di ricezione
+    private volatile boolean running = true; // Flag per controllare il ciclo di ricezione
+    private String playerType;
+    private Map<String, Proiettile> proiettili = new HashMap<>();
+
 
     public GameClient() throws IOException {
-        socket = new Socket(serverAddress, serverPort);
-        out = new PrintWriter(socket.getOutputStream(), true);
-        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        try {
+            socket = new Socket(serverAddress, serverPort);
+            out = new PrintWriter(socket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        } catch (IOException e) {
+            throw new IOException("Impossibile stabilire la connessione con il server.", e);
+        }
     }
 
     public void send(String message) {
         out.println(message);
     }
 
-    public String receive() throws IOException {
-        return in.readLine();
+    public void close() {
+        try {
+            running = false; // Ferma il ciclo di ricezione
+            if (in != null) in.close();
+            if (out != null) out.close();
+            if (socket != null) socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    public void close() throws IOException {
-        running = false; // Imposta il flag a false per fermare il thread di ricezione
-        in.close();
-        out.close();
-        socket.close();
-    }
-
-    // Metodo per iniziare a ricevere messaggi dal server e gestirli
     public void startClient(Consumer<String> onMessageReceived) {
         new Thread(() -> {
-            try {
-                while (running) {
-                    String receivedMessage = receive();
-                    if (receivedMessage != null) {
-                        System.out.println("Server dice: " + receivedMessage);
-                        onMessageReceived.accept(receivedMessage);
+            while (running) {
+                try {
+                    String message = in.readLine();
+                    if (message != null) {
+                        handleIncomingMessage(message, onMessageReceived);
                     } else {
-                        // Se receive() restituisce null, il server ha chiuso la connessione
-                        System.out.println("Connessione chiusa dal server.");
+                        System.out.println("Connessione terminata dal server.");
                         break;
                     }
-                }
-            } catch (IOException e) {
-                if (running) { // Se il flag è ancora true, si tratta di un errore non previsto
-                    System.err.println("Errore nella connessione: " + e.getMessage());
-                    e.printStackTrace();
-                } else {
-                    System.out.println("Connessione chiusa.");
+                } catch (IOException e) {
+                    if (running) { // Errore inaspettato
+                        System.err.println("Errore di connessione: " + e.getMessage());
+                    }
+                    break;
                 }
             }
-        }).start();
+            close();
+        }, "Client-Receiver").start();
+    }
+    
+    public void sendGameDimensions(int width, int height) {
+        JsonObject jsonMessage = new JsonObject();
+        jsonMessage.addProperty("tipo", "dimensioniGioco");
+        jsonMessage.addProperty("larghezza", width);
+        jsonMessage.addProperty("altezza", height);
+        send(jsonMessage.toString());
     }
 
-    // Metodo main per test
+
+    private void handleIncomingMessage(String message, Consumer<String> onMessageReceived) {
+        JsonObject receivedJson = JsonParser.parseString(message).getAsJsonObject();
+        String tipo = receivedJson.get("tipo").getAsString();
+
+        switch (tipo) {
+            case "tipoNavicella":
+                playerType = receivedJson.get("navicella").getAsString();
+                System.out.println("Tipo di navicella assegnato: " + playerType);
+                break;
+            case "aggiornamentoStato":
+                // Gestisci l'aggiornamento dello stato del gioco qui
+                break;
+            case "posizione":
+                // Gestisci qui l'aggiornamento della posizione
+                // Ad esempio, potresti voler aggiornare la posizione di una navicella sul client
+                int x = receivedJson.get("x").getAsInt();
+                int y = receivedJson.get("y").getAsInt();
+                // Assicurati di avere un metodo o un modo per aggiornare la posizione basandoti su queste informazioni
+                //System.out.println("Aggiornamento posizione ricevuto: x=" + x + ", y=" + y);
+                break;
+            case "sparo":
+                String mittente = receivedJson.get("mittente").getAsString();
+                double xP = receivedJson.get("x").getAsDouble();
+                double yP = receivedJson.get("y").getAsDouble();
+                double angoloP = receivedJson.has("angolo") ? receivedJson.get("angolo").getAsDouble() : 0; // Assumiamo che il server invii anche l'angolo
+
+                Proiettile proiettile = proiettili.get(mittente);
+                if (proiettile == null) {
+                    // Se il proiettile non esiste, significa che è la prima volta che riceviamo questo mittente come ID, quindi lo aggiungiamo
+                    proiettile = new Proiettile(xP, yP, angoloP, mittente);
+                    proiettili.put(mittente, proiettile);
+                } else {
+                    // Se il proiettile esiste già, semplicemente aggiorniamo la sua posizione e angolo
+                    proiettile.reset(xP, yP, angoloP);
+                }
+                System.out.println("GameClient:sparo: "+receivedJson);
+                break;
+
+            default:
+                System.err.println("GameClient: Tipo di messaggio sconosciuto: " + tipo);
+                break;
+        }
+
+        onMessageReceived.accept(message);
+    }
+
+
     public static void main(String[] args) {
         try {
             GameClient client = new GameClient();
             client.startClient(message -> {
-                // Qui puoi decidere come gestire i messaggi ricevuti, es. aggiornare UI
-                if (message.startsWith("tipoNavicella:")) {
-                    // Estrai il tipo di navicella e gestiscilo
-                    String tipoNavicella = message.substring("tipoNavicella:".length());
-                    System.out.println("Mi e' stata assegnata la " + tipoNavicella);
-                }
-                // Aggiungi qui altre condizioni per gestire diversi tipi di messaggi
+                // Qui puoi decidere come gestire i messaggi ricevuti
             });
         } catch (IOException e) {
-            System.err.println("Impossibile connettersi al server: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("Errore nell'avviare il client: " + e.getMessage());
         }
     }
 }

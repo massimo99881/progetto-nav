@@ -35,6 +35,7 @@ import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
 import com.google.gson.JsonObject;
@@ -72,6 +73,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	
 	private Clip clipAudio;
 	
+	
 	public Pannello() {
 		try {
             this.client = new GameClient();
@@ -80,6 +82,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
             System.err.println("Errore nell'inizializzare il client di rete: " + e.getMessage());
             // Gestisci l'errore come preferisci, es. mostrando un messaggio all'utente
         }
+		
+		
 		
 		Nav nave = new Nav("navicella1");  //nave principale	
 		Nav nave2 = new Nav("navicella2"); //nave fantoccio per test collisioni
@@ -200,7 +204,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	
 	private void handleNetworkMessage(String message) {
 	    // Analizza il messaggio JSON
-		System.out.println(message);
+		//System.out.println(message);
 		
 	    JsonObject jsonMessage = JsonParser.parseString(message).getAsJsonObject();
 	    
@@ -225,9 +229,16 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            	updateShipPosition(nomeNavicella, x, y, angolo);
 	            }
 	            break;
-	        // Aggiungi qui altri casi se necessario
+	        case "aggiornamentoProiettile":
+	            double startX = jsonMessage.get("x").getAsDouble();
+	            double startY = jsonMessage.get("y").getAsDouble();
+	            double angoloP = jsonMessage.get("angolo").getAsDouble();
+	            System.out.println("Pannello:aggiornamentoProiettile: "+jsonMessage);
+	            Proiettile proiettile = new Proiettile(startX, startY, angoloP);
+	            SwingUtilities.invokeLater(() -> proiettili.add(proiettile));
+	            break;
 	        default:
-	            System.err.println("Tipo di evento sconosciuto: " + eventType);
+	            System.err.println("Pannello: Tipo di evento sconosciuto: " + eventType);
 	            break;
 	    }
 	}
@@ -307,15 +318,32 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 
 	    // Aggiorna 'larghezzaPrecedente' con la nuova larghezza dopo il ridimensionamento
 	    this.larghezzaPrecedente = this.getWidth();
+	    
+	    sendGameDimensionsAfterRender();
 	}
 
 
+	private void sendGameDimensionsAfterRender() {
+	    // Verifica se il pannello è stato effettivamente visualizzato con dimensioni valide
+	    if (this.getWidth() > 0 && this.getHeight() > 0) {
+	        // Invia le dimensioni al server
+	        client.sendGameDimensions(this.getWidth(), this.getHeight());
+	    } else {
+	        // Se le dimensioni non sono valide, potresti voler riprovare dopo un breve ritardo
+	        SwingUtilities.invokeLater(() -> {
+	            sendGameDimensionsAfterRender();
+	        });
+	    }
+	}
+
+	
 	@Override
 	public void componentMoved(ComponentEvent e) {
 	}
 
 	@Override
 	public void componentShown(ComponentEvent e) {
+		sendGameDimensionsAfterRender();
 	}
 
 	@Override
@@ -340,6 +368,14 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            proiettili.add(proiettile);
 	            
 	            riproduciSuonoSparo(); // Riproduce il suono dello sparo
+	            
+	         // Invia messaggio di sparo al server
+	            JsonObject jsonMessage = new JsonObject();
+	            jsonMessage.addProperty("tipo", "sparo");
+	            jsonMessage.addProperty("x", startX);
+	            jsonMessage.addProperty("y", startY);
+	            jsonMessage.addProperty("angolo", nave.angolo);
+	            client.send(jsonMessage.toString());
 	        }
 	    }
 	}

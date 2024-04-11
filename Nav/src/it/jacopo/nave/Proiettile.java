@@ -8,6 +8,8 @@ import java.awt.geom.Ellipse2D;
 
 public class Proiettile  {
     double x, y; // Posizione del proiettile
+    String mittente;
+    
     public double getX() {
         return x;
     }
@@ -16,7 +18,7 @@ public class Proiettile  {
     public double getY() {
         return y;
     }
-    double velocita = 5; // Velocità del proiettile
+    double velocita = 7; // Velocità del proiettile
     double angolo;
     
     public Proiettile(double x, double y, double angolo) {
@@ -25,7 +27,20 @@ public class Proiettile  {
         this.angolo = angolo;
         this.velocita = 7; // Potresti voler utilizzare una velocità costante o basata sulla velocità della navicella
     }
+    
+    public Proiettile(double x, double y, double angolo, String mittente) {
+        this.x = x;
+        this.y = y;
+        this.angolo = angolo;
+        this.mittente = mittente;
+        this.velocita = 7; // O una velocità basata sulla navicella, ecc.
+    }
 
+    
+    public String getMittente() {
+        return mittente;
+    }
+    
     void aggiorna() {
         x += velocita * Math.cos(angolo);
         y += velocita * Math.sin(angolo);
