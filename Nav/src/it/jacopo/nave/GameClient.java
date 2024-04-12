@@ -101,15 +101,16 @@ public class GameClient {
                 //System.out.println("Aggiornamento posizione ricevuto: x=" + x + ", y=" + y);
                 break;
             case "sparo":
-                String mittente = receivedJson.get("mittente").getAsString();
+                //String mittente = receivedJson.get("mittente").getAsString();
+            	System.out.println("GameClient: "+receivedJson);
                 double xP = receivedJson.get("x").getAsDouble();
                 double yP = receivedJson.get("y").getAsDouble();
                 double angoloP = receivedJson.has("angolo") ? receivedJson.get("angolo").getAsDouble() : 0; // Assumiamo che il server invii anche l'angolo
-                String idP = receivedJson.get("mittente").getAsString();
+                String mittente = receivedJson.get("mittente").getAsString();
                 
                 proiettilePool.getProiettile(xP, yP, angoloP, mittente);
                 
-                System.out.println("GameClient:sparo: "+receivedJson);
+                
                 break;
 
             default:

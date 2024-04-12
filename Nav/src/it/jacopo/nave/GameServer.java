@@ -57,13 +57,14 @@ public class GameServer {
             	// Invia aggiornamenti a tutti i clienti tranne al mittente del proiettile
                 for (Handler client : clients) {
                     if (!client.getPlayerType().equals(proiettile.getMittente())) {
+                    	
                     	JsonObject jsonMessage = new JsonObject();
                         jsonMessage.addProperty("tipo", "sparo");
                         jsonMessage.addProperty("mittente", proiettile.getMittente());
                         jsonMessage.addProperty("x", proiettile.getX());
                         jsonMessage.addProperty("y", proiettile.getY());
                         jsonMessage.addProperty("angolo", proiettile.angolo);
-                    	//System.out.println("GameServer > "+client.getPlayerType()+" sparo:"+jsonMessage.toString());
+                        System.out.println("GameServer > "+client.getPlayerType()+": "+jsonMessage.toString());
                         client.sendMessage(jsonMessage.toString());
                     }
                 }
@@ -74,7 +75,7 @@ public class GameServer {
     public synchronized void broadcast(String message, String excludePlayerType) {
         for (Handler client : clients) {
             if (!client.getPlayerType().equals(excludePlayerType)) {
-            	System.out.println("GameServer > "+client.getPlayerType()+" posizione:"+message);
+            	System.out.println("GameServer > "+client.getPlayerType()+" :"+message);
                 client.sendMessage(message);
             }
         }

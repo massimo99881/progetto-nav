@@ -377,8 +377,10 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	         // Invia messaggio di sparo al server
 	            JsonObject jsonMessage = new JsonObject();
 	            jsonMessage.addProperty("tipo", "sparo");
+	            jsonMessage.addProperty("id", proiettile.getId());
 	            jsonMessage.addProperty("x", startX);
 	            jsonMessage.addProperty("y", startY);
+	            jsonMessage.addProperty("mittente", clientNavicella);
 	            jsonMessage.addProperty("angolo", nave.angolo);
 	            client.send(jsonMessage.toString());
 	        }

@@ -54,14 +54,15 @@ public class Handler implements Runnable {
                         break;
                     case "sparo":
                         // Gestione di un messaggio di sparo
+                    	System.out.println("Handler < "+this.playerType+" sparo: "+receivedJson);
                         double startX = receivedJson.get("x").getAsDouble();
                         double startY = receivedJson.get("y").getAsDouble();
                         double angolo = receivedJson.get("angolo").getAsDouble();
-
+                        String id = receivedJson.get("id").getAsString();
                         // Use ProiettilePool directly
                         Proiettile proiettile = ProiettilePool.getInstance().getProiettile(startX, startY, angolo, this.playerType);
                         server.broadcast(proiettile.toJson().toString(), this.playerType);
-                        System.out.println("Handler < "+this.playerType+" sparo: "+receivedJson);
+                        
                         break;
                     default:
                         System.err.println("Tipo di evento sconosciuto: " + tipo);
