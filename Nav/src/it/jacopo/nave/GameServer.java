@@ -22,7 +22,7 @@ public class GameServer {
     private final List<Handler> clients = new CopyOnWriteArrayList<>();
     private int playerCount = 0;
     private final Map<String, Dimension> gameDimensions = new HashMap<>();
-    private ProiettilePool proiettilePool = ProiettilePool.getInstance(); 
+    private Singleton singleton = Singleton.getInstance(); 
     private List<Asteroide> asteroidi = new CopyOnWriteArrayList<>();
     
     
@@ -46,9 +46,8 @@ public class GameServer {
 	        Random rand = new Random();
 	        int numeroCasuale = rand.nextInt(441) + 10; // Genera un numero casuale tra 10 (incluso) e 451 (escluso)
 	        asteroide.y = numeroCasuale; // Distribuisce gli asteroidi verticalmente
-	        proiettilePool.getNomiAsteroidi().add(nomeAsteroide);
-	        // Aggiungi l'asteroide alla mappa degli oggetti
-	        proiettilePool.getObj().put(asteroide.name, asteroide);
+	        singleton.getNomiAsteroidi().add(nomeAsteroide);
+	        singleton.getObj().put(asteroide.name, asteroide);
 	    }
     }
     
@@ -102,8 +101,8 @@ public class GameServer {
             	
             	if (aggiunteEffettuate < Conf.Level_Total) {
             		
-                    aggiungiAsteroidi();
-                    aggiunteEffettuate++;
+//                    aggiungiAsteroidi();
+//                    aggiunteEffettuate++;
                 } else {
 //                	try {
 //        		        File fileAudio = new File(Conf._RESOURCES_AUDIO_PATH + "winner.wav"); 
@@ -128,7 +127,7 @@ public class GameServer {
  	private void aggiungiAsteroidi() {
  		
  	    for (int i = 0; i < Conf.MAX_AGGIUNTE; i++) {
- 	        aggiungiAsteroide(proiettilePool.getObj()); 
+ 	        aggiungiAsteroide(singleton.getObj()); 
  	    }
  	}
  	
@@ -136,8 +135,8 @@ public class GameServer {
  	    Random rand = new Random();
  	    int posizioneYCasuale = rand.nextInt(441) + 10; 
  	    int indiceImmagineCasuale = rand.nextInt(Conf.asteroid_number) + 1; 
- 	    String nomeAsteroide = "asteroide" + (proiettilePool.getNomiAsteroidi().size() + 1);
- 	   proiettilePool.getNomiAsteroidi().add(nomeAsteroide); 
+ 	    String nomeAsteroide = "asteroide" + (singleton.getNomiAsteroidi().size() + 1);
+ 	    singleton.getNomiAsteroidi().add(nomeAsteroide); 
  	    Asteroide asteroide = new Asteroide(nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + indiceImmagineCasuale + ".png");
  	    Dimension n = gameDimensions.get("navicella1");
  	    asteroide.x = Conf.FRAME_WIDTH-5;
@@ -156,7 +155,7 @@ public class GameServer {
     }
 
     private void inviaAggiornamentiProiettili() {
-    	List<Proiettile> proiettiliAttivi = proiettilePool.getActiveProiettili();
+    	List<Proiettile> proiettiliAttivi = singleton.getActiveProiettili();
     	Iterator<Proiettile> iterator = proiettiliAttivi.iterator();
         while (iterator.hasNext()) {
             Proiettile proiettile = iterator.next();
@@ -164,7 +163,7 @@ public class GameServer {
 
             if (!proiettileValido(proiettile)) {
             	iterator.remove();  // Rimuovi il proiettile dalla lista dei proiettili attivi
-                proiettilePool.releaseProiettile(proiettile);  // Restituisci il proiettile al pool
+            	singleton.releaseProiettile(proiettile);  // Restituisci il proiettile al pool
             } else {
             	// Invia aggiornamenti a tutti i clienti tranne al mittente del proiettile
                 for (Handler client : clients) {

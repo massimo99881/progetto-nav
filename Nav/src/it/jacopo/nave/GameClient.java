@@ -18,10 +18,10 @@ public class GameClient {
     private final int serverPort = 8080;
     private volatile boolean running = true; // Flag per controllare il ciclo di ricezione
     private String playerType;
-    private ProiettilePool proiettilePool ;
+    private Singleton proiettilePool ;
 
 
-    public GameClient(ProiettilePool proiettilePool) throws IOException {
+    public GameClient(Singleton proiettilePool) throws IOException {
     	this.proiettilePool = proiettilePool;
         try {
             socket = new Socket(serverAddress, serverPort);

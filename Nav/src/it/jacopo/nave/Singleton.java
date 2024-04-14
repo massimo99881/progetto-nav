@@ -6,15 +6,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-public class ProiettilePool {
+public class Singleton {
     private final List<Proiettile> available = new LinkedList<>();
     private final List<Proiettile> active = new LinkedList<>();
     private Map<String, Cache> obj = new HashMap<>();
-    private static ProiettilePool instance = new ProiettilePool();
+    private static Singleton instance = new Singleton();
     private List<String> nomiAsteroidi = new ArrayList<>();
-    private ProiettilePool() {}
+    private Singleton() {}
 
-    public static ProiettilePool getInstance() {
+    public static Singleton getInstance() {
         return instance;
     }
 

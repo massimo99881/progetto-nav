@@ -66,11 +66,11 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	private int asteroidiDistrutti = 0;
 	private int larghezzaPrecedente;
 	private String clientNavicella = "";
-	private ProiettilePool proiettilePool = ProiettilePool.getInstance();
+	private Singleton singleton ;
 	private Clip clipAudio;
 	
-	public Pannello(ProiettilePool proiettilePool) {
-		this.proiettilePool = proiettilePool;
+	public Pannello() {
+		this.singleton = Singleton.getInstance();
 		setupNetworking();
 		setupNavicelle();
 		setupSfondo();
@@ -91,8 +91,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
         clipAudio.loop(Clip.LOOP_CONTINUOUSLY); // Loop continuo
 	}
 	
-	
-
 	private void setupNavicelle() {
 		Nav nave = new Nav("navicella1");  //nave principale	
 		Nav nave2 = new Nav("navicella2"); //nave fantoccio per test collisioni
@@ -102,13 +100,13 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
         nave.y = Conf.FRAME_HEIGHT/3;
         nave.x = 25; 
         
-        proiettilePool.getObj().put(nave.nome, nave);
-        proiettilePool.getObj().put(nave2.nome, nave2);
+        singleton.getObj().put(nave.nome, nave);
+        singleton.getObj().put(nave2.nome, nave2);
 	}
 	
 	private void setupNetworking() {
         try {
-            this.client = new GameClient(proiettilePool);
+            this.client = new GameClient(singleton);
             this.client.startClient(this::handleNetworkMessage);
         } catch (IOException e) {
             System.err.println("Errore nell'inizializzare il client di rete: " + e.getMessage());
@@ -120,7 +118,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 		//System.out.println(message);
 		
 	    JsonObject jsonMessage = JsonParser.parseString(message).getAsJsonObject();
-	    
 
 	    // Estrai il tipo di evento dal messaggio
 	    String eventType = jsonMessage.get("tipo").getAsString();
@@ -150,7 +147,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            System.out.println("Pannello:sparo: "+jsonMessage);
 	            //Proiettile proiettile = new Proiettile(startX, startY, angoloP);
 	            if (!mittente.equals(this.clientNavicella)) { // Assicurati che il proiettile non sia della propria navicella
-	                Proiettile proiettile = proiettilePool.getProiettile(startX, startY, angoloP, mittente);
+	                Proiettile proiettile = singleton.getProiettile(startX, startY, angoloP, mittente);
 	                SwingUtilities.invokeLater(() -> proiettili.add(proiettile));
 	            }
 	            
@@ -165,7 +162,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            float opacitaA = jsonMessage.get("opacita").getAsFloat();
 	            int colpiSubitiA = jsonMessage.get("colpiSubiti").getAsInt(); 
 
-	            Map<String, Cache> obj = proiettilePool.getObj();
+	            Map<String, Cache> obj = singleton.getObj();
 	            Asteroide asteroide = (Asteroide) obj.get(nomeAsteroide);
 	            if (asteroide != null) {
 	                asteroide.setX(xA);
@@ -187,8 +184,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            break;
 	    }
 	}
-
-
 	
 	public void sendPlayerPosition(int x, int y, double angolo) {
 	    JsonObject jsonMessage = new JsonObject();
@@ -200,11 +195,9 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    client.send(jsonMessage.toString());
 	}
 
-
-
 	public void updateShipPosition(String nomeNavicella, int x, int y, double angolo) {
 	    // Cerca la navicella specificata nella mappa degli oggetti di gioco
-		Map<String, Cache> obj = proiettilePool.getObj();
+		Map<String, Cache> obj = singleton.getObj();
 	    Nav navicella = (Nav) obj.get(nomeNavicella);
 
 	    // Se la navicella esiste, verifica se la posizione o l'angolo sono cambiati
@@ -224,9 +217,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        System.err.println("Navicella non trovata: " + nomeNavicella);
 	    }
 	}
-
-
-
 	
 	private void caricaAudio() {
 	    try {
@@ -241,7 +231,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	
 	@Override
 	public void componentResized(ComponentEvent e) {
-		Map<String, Cache> obj = proiettilePool.getObj();
+		Map<String, Cache> obj = singleton.getObj();
 	    if (this.getWidth() > 0 && this.larghezzaPrecedente > 0) { // Assicurati che entrambe le larghezze siano valide
 	    	// Aggiorna la posizione delle navicelle
 	        for (Entry<String, Cache> entry : obj.entrySet()) {
@@ -254,7 +244,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        }
 
 	        // Aggiorna la posizione degli asteroidi
-	        for (String nomeAsteroide : proiettilePool.getNomiAsteroidi()) {
+	        for (String nomeAsteroide : singleton.getNomiAsteroidi()) {
 	            Asteroide asteroide = (Asteroide)obj.get(nomeAsteroide);
 	            if (asteroide != null) {
 	                double proporzione = asteroide.x / (double) this.larghezzaPrecedente;
@@ -268,7 +258,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    
 	    sendGameDimensionsAfterRender();
 	}
-
 
 	private void sendGameDimensionsAfterRender() {
 	    // Verifica se il pannello è stato effettivamente visualizzato con dimensioni valide
@@ -306,12 +295,12 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        }
 	        lastShootTime = currentTime; // Aggiorna l'ultimo tempo di sparo
 
-	        Nav nave = (Nav) proiettilePool.getObj().get(clientNavicella);
+	        Nav nave = (Nav) singleton.getObj().get(clientNavicella);
 	        if (nave != null) {
 	            double startX = nave.x + 30 * Math.cos(nave.angolo);
 	            double startY = nave.y + 30 * Math.sin(nave.angolo);
 	            //Proiettile proiettile = new Proiettile(startX, startY, nave.angolo);
-	            Proiettile proiettile = proiettilePool.getProiettile(startX, startY, nave.angolo, clientNavicella);
+	            Proiettile proiettile = singleton.getProiettile(startX, startY, nave.angolo, clientNavicella);
 	            proiettili.add(proiettile);
 	            
 	            riproduciSuonoSparo(); // Riproduce il suono dello sparo
@@ -328,13 +317,11 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        }
 	    }
 	}
-	
-	
 
 	@Override
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
-		if (clientNavicella == null || !proiettilePool.getObj().containsKey(clientNavicella)) {
+		if (clientNavicella == null || !singleton.getObj().containsKey(clientNavicella)) {
 	        // La navicella non è stata ancora impostata o non è presente nella mappa,
 	        // quindi non procedere ulteriormente per evitare NullPointerException.
 	        return;
@@ -366,7 +353,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    }
 	    
 	    // Disegna i proiettili
-	    List<Proiettile> activeProiettili = proiettilePool.getActiveProiettili();
+	    List<Proiettile> activeProiettili = singleton.getActiveProiettili();
 	    for (Proiettile proiettile : activeProiettili) {
 	        proiettile.disegna(g2d);
 	    }
@@ -375,7 +362,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 		controllaCollisioneNavCursore();
 
 		// Crea una copia temporanea della mappa degli oggetti per iterazione sicura
-		Map<String, Cache> tempObjects = new HashMap<>(proiettilePool.getObj());
+		Map<String, Cache> tempObjects = new HashMap<>(singleton.getObj());
 	    for (Entry<String, Cache> entry : tempObjects.entrySet()) {
 	        Cache gameObject = entry.getValue();
 	        if (gameObject instanceof Asteroide) {
@@ -403,9 +390,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    //sendPlayerPosition(n.x,n.y,n.angolo); //TODO capire
 	}
 
-
 	private void controllaCollisioneNavCursore() {
-		if (clientNavicella == null || !proiettilePool.getObj().containsKey(clientNavicella)) {
+		if (clientNavicella == null || !singleton.getObj().containsKey(clientNavicella)) {
 	        // La navicella non è stata ancora impostata o non è presente nella mappa,
 	        // quindi non procedere ulteriormente per evitare NullPointerException.
 	        return;
@@ -413,7 +399,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 		
 		Shape circle = createCircle(cx, cy, 20);
 		Area area2 = new Area(circle); // Area del cerchio
-		Nav navicella = (Nav)proiettilePool.getObj().get(clientNavicella);
+		Nav navicella = (Nav)singleton.getObj().get(clientNavicella);
 		area1 = new Area(navicella.getTransf()); 
 		
 		area1.intersect(area2); //area1 diventa l'intersezione fra le 2
@@ -425,9 +411,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    }
 	}
 
-
 	private void controllaCollisioneNavAsteroid(Entry<String, Cache> entry) {
-		Nav navicella1 = (Nav)proiettilePool.getObj().get(clientNavicella);
+		Nav navicella1 = (Nav)singleton.getObj().get(clientNavicella);
         Asteroide asteroide = (Asteroide) entry.getValue();
 
         // Controllo preliminare bounding box per ridurre i calcoli
@@ -458,6 +443,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        return;
 		}
 	}
+	
 	private void riproduciSuonoSparo() {
 	    try {
 	        // Carica il suono dello sparo
@@ -472,7 +458,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        e.printStackTrace();
 	    }
 	}
-
 	
 	public void aggiornaGioco() {
 		
@@ -489,12 +474,12 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        	// Rimuove il proiettile dalla lista dei proiettili attivi
 	            iterProiettili.remove(); 
 	            // Rilascia il proiettile nel pool per il riutilizzo
-	            proiettilePool.releaseProiettile(proiettile); 
+	            singleton.releaseProiettile(proiettile); 
 	            continue;
 	        }
 	        
 	        //ciclo per ogni asteroide
-	        Iterator<Entry<String, Cache>> iterObj = proiettilePool.getObj().entrySet().iterator();
+	        Iterator<Entry<String, Cache>> iterObj = singleton.getObj().entrySet().iterator();
 	        while (iterObj.hasNext()) {
 	            Entry<String, Cache> entry = iterObj.next();
 	            Cache gameObject = entry.getValue();
@@ -523,7 +508,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	                    	// Rimuovi il proiettile
 	 	                    iterProiettili.remove(); 
 	 	                    // Rilascia il proiettile nel pool per il riutilizzo
-	 	                    proiettilePool.releaseProiettile(proiettile); 
+	 	                    singleton.releaseProiettile(proiettile); 
 	 	                    // Aggiorna lo stato dell'asteroide per il colpo ricevuto
 	 	                    asteroide.colpito(); 
 
@@ -556,7 +541,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	 	                	// Rimuovi il proiettile
 	 	                    iterProiettili.remove(); 
 	 	                    // Rilascia il proiettile nel pool per il riutilizzo
-	 	                    proiettilePool.releaseProiettile(proiettile); 
+	 	                    singleton.releaseProiettile(proiettile); 
 	 	                    // Aggiorna lo stato dell'asteroide per il colpo ricevuto
 	 	                    asteroide.colpito(); 
 
@@ -583,8 +568,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    asteroidiDistrutti = 0;
 	    
 	    proiettili.clear(); // Svuota la lista dei proiettili
-	    proiettilePool.getObj().clear(); // Rimuovi tutti gli oggetti del gioco
-	    proiettilePool.getNomiAsteroidi().clear(); // Svuota la lista dei nomi degli asteroidi
+	    singleton.getObj().clear(); // Rimuovi tutti gli oggetti del gioco
+	    singleton.getNomiAsteroidi().clear(); // Svuota la lista dei nomi degli asteroidi
 	    sfondoX = 0; // Resetta la posizione dello sfondo
 	    gameTimer.stop(); // Ferma il timer del gioco
 	    aggiungiAsteroidiTimer.stop(); // Ferma il timer che aggiunge gli asteroidi
@@ -667,19 +652,10 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
             sfondo = null;
         }
 	}
-
 	
-	// Metodo per creare un cerchio
     private Shape createCircle(int x, int y, int r) {
         return new java.awt.geom.Ellipse2D.Double(x - r, y - r, 2 * r, 2 * r);
     }
-    
-    // Metodi per inviare aggiornamenti al server basati sulle azioni dell'utente
-    // Ad esempio, quando l'utente muove la navicella o spara
-
-    // Override dei metodi dell'interfaccia KeyListener e MouseMotionListener
-    // per gestire l'input dell'utente e inviare aggiornamenti al server
-
     
 	@Override
 	public void keyTyped(KeyEvent e) {}
@@ -689,7 +665,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 		
 	    if (e.getKeyCode() == KeyEvent.VK_SPACE) {
 	        if (!isInCollision) {
-	        	Nav nave = (Nav) proiettilePool.getObj().get(clientNavicella);
+	        	Nav nave = (Nav) singleton.getObj().get(clientNavicella);
 	            nave.speed += 10;
 	            //TODO capire
 	            sendPlayerPosition(nave.x, nave.y, nave.angolo);
@@ -698,13 +674,12 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    }
 	}
 
-
 	@Override
 	public void keyReleased(KeyEvent e) {}
 	@Override
 	public void mouseDragged(MouseEvent e) {
 		if (staSparando) {
-            Nav nave = (Nav) proiettilePool.getObj().get(clientNavicella);
+            Nav nave = (Nav) singleton.getObj().get(clientNavicella);
             if (nave != null) {
                 // Calcola l'angolo tra la navicella e la posizione del cursore del mouse
                 double angleToMouse = Math.atan2(e.getY() - nave.y, e.getX() - nave.x);
@@ -717,16 +692,9 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
         }
 	}
 	
-//	@Override
-//	public void mouseMoved(MouseEvent e) {	
-//		cx = e.getX();
-//		cy = e.getY();
-//		obj.get(clientNavicella).angolo = Math.atan2(((e.getY()) - (obj.get(clientNavicella).y)) , ((e.getX()) - (obj.get(clientNavicella).x))); 
-//	}
-	//TODO capire
 	@Override
 	public void mouseMoved(MouseEvent e) {  
-	    Nav nave = (Nav) proiettilePool.getObj().get(clientNavicella);
+	    Nav nave = (Nav) singleton.getObj().get(clientNavicella);
 	    if (nave != null) { 
 	        cx = e.getX();
 	        cy = e.getY();

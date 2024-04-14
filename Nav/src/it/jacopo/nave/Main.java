@@ -12,8 +12,7 @@ public class Main {
 		JFrame frame = new JFrame();
 		frame.setDefaultCloseOperation(frame.EXIT_ON_CLOSE);
 		frame.setBounds(200, 200, w, h);
-		ProiettilePool proiettilePool = ProiettilePool.getInstance();
-        Pannello pan = new Pannello(proiettilePool);
+        Pannello pan = new Pannello();
 		pan.setBounds(0, 0, w, h);
 		frame.add(pan);
 		pan.addKeyListener(pan);
