@@ -1,12 +1,20 @@
 package it.jacopo.nave;
 
 import java.awt.Dimension;
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
+
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
 public class GameServer {
     private ServerSocket serverSocket;
@@ -15,11 +23,64 @@ public class GameServer {
     private int playerCount = 0;
     private final Map<String, Dimension> gameDimensions = new HashMap<>();
     private ProiettilePool proiettilePool = ProiettilePool.getInstance(); 
+    private List<Asteroide> asteroidi = new CopyOnWriteArrayList<>();
+    
+    
+    private Timer aggiungiAsteroidiTimer;
+    private int aggiunteEffettuate = 0;
 
     public GameServer() throws IOException {
         serverSocket = new ServerSocket(port);
         System.out.println("Server avviato sulla porta " + port);
+        
+        Asteroide.precaricaImmagini();
+        
         iniziaTimerAggiornamentiProiettili();
+        iniziaTimerAggiornamentiAsteroidi();
+        
+        // Inizializza 15 asteroidi con posizioni iniziali visibili
+	    for (int i = 1; i <= Conf.asteroid_number; i++) { 
+	    	String nomeAsteroide = "asteroide" + i;
+	        Asteroide asteroide = new Asteroide(nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png");
+	        asteroide.x = Conf.FRAME_WIDTH; // Tutti gli asteroidi partono dalla stessa posizione X iniziale
+	        Random rand = new Random();
+	        int numeroCasuale = rand.nextInt(441) + 10; // Genera un numero casuale tra 10 (incluso) e 451 (escluso)
+	        asteroide.y = numeroCasuale; // Distribuisce gli asteroidi verticalmente
+	        proiettilePool.getNomiAsteroidi().add(nomeAsteroide);
+	        // Aggiungi l'asteroide alla mappa degli oggetti
+	        proiettilePool.getObj().put(asteroide.name, asteroide);
+	    }
+    }
+    
+    private void aggiornaPosizioniAsteroidi() {
+        for (Asteroide asteroide : asteroidi) {
+            asteroide.updateMovement();
+            JsonObject jsonMessage = new JsonObject();
+            jsonMessage.addProperty("tipo", "aggiornamentoPosizioneAsteroide");
+            jsonMessage.addProperty("nome", asteroide.getName());
+            jsonMessage.addProperty("x", asteroide.getX());
+            jsonMessage.addProperty("y", asteroide.getY());
+            jsonMessage.addProperty("angoloRotazione", asteroide.getAngoloRotazione());
+            jsonMessage.addProperty("speed", asteroide.getSpeed());
+            jsonMessage.addProperty("angolo", asteroide.getAngolo());
+            jsonMessage.addProperty("opacita", asteroide.getOpacita());
+            jsonMessage.addProperty("colpiSubiti", asteroide.getColpiSubiti());  // Aggiungendo il numero di colpi subiti
+            broadcast(jsonMessage.toString());
+        }
+    }
+    
+    private void verificaCollisioni() {
+        for (Handler client : clients) {
+            Nav navicella = client.getNavicella();
+            for (Asteroide asteroide : asteroidi) {
+                if (navicella.getBounds().intersects(asteroide.getBounds())) {
+                    JsonObject jsonMessage = new JsonObject();
+                    jsonMessage.addProperty("tipo", "collisione");
+                    jsonMessage.addProperty("con", asteroide.getName());
+                    client.sendMessage(jsonMessage.toString());
+                }
+            }
+        }
     }
 
     public void setGameDimensions(String clientID, int larghezza, int altezza) {
@@ -31,16 +92,67 @@ public class GameServer {
         clients.remove(clientHandler);
         System.out.println("Client disconnesso: " + clientHandler.getPlayerType());
     }
-
+    
+    private void iniziaTimerAggiornamentiAsteroidi() {
+    	
+        aggiungiAsteroidiTimer = new Timer(true);
+        aggiungiAsteroidiTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+            	
+            	if (aggiunteEffettuate < Conf.Level_Total) {
+            		
+                    aggiungiAsteroidi();
+                    aggiunteEffettuate++;
+                } else {
+//                	try {
+//        		        File fileAudio = new File(Conf._RESOURCES_AUDIO_PATH + "winner.wav"); 
+//        		        AudioInputStream audioStream = AudioSystem.getAudioInputStream(fileAudio);
+//        		        clipAudio = AudioSystem.getClip();
+//        		        clipAudio.open(audioStream);
+//        		        clipAudio.start();
+//        		    } catch (UnsupportedAudioFileException | IOException | LineUnavailableException ex) {
+//        		        ex.printStackTrace();
+//        		    }
+//                    aggiungiAsteroidiTimer.stop(); // Ferma il Timer
+//                    JOptionPane.showMessageDialog(null, "Hai vinto!", "Complimenti", JOptionPane.INFORMATION_MESSAGE);
+//                    resetGame(); // Chiama resetGame dopo che l'utente ha fatto click su "OK"
+                }
+            	
+                aggiornaPosizioniAsteroidi();
+                verificaCollisioni();
+            }
+        }, 0, Conf.Level_timer);  
+    }
+    
+ 	private void aggiungiAsteroidi() {
+ 		
+ 	    for (int i = 0; i < Conf.MAX_AGGIUNTE; i++) {
+ 	        aggiungiAsteroide(proiettilePool.getObj()); 
+ 	    }
+ 	}
+ 	
+ 	private void aggiungiAsteroide(Map<String, Cache> obj) {
+ 	    Random rand = new Random();
+ 	    int posizioneYCasuale = rand.nextInt(441) + 10; 
+ 	    int indiceImmagineCasuale = rand.nextInt(Conf.asteroid_number) + 1; 
+ 	    String nomeAsteroide = "asteroide" + (proiettilePool.getNomiAsteroidi().size() + 1);
+ 	   proiettilePool.getNomiAsteroidi().add(nomeAsteroide); 
+ 	    Asteroide asteroide = new Asteroide(nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + indiceImmagineCasuale + ".png");
+ 	    Dimension n = gameDimensions.get("navicella1");
+ 	    asteroide.x = Conf.FRAME_WIDTH-5;
+ 	    asteroide.y = posizioneYCasuale;
+ 	    obj.put(nomeAsteroide, asteroide);
+ 	}
+    
     private void iniziaTimerAggiornamentiProiettili() {
     	Timer timerAggiornamentoProiettili = new Timer(true);
         timerAggiornamentoProiettili.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-            	//System.out.println("Invio aggiornamenti proiettili...");
                 inviaAggiornamentiProiettili();
             }
-        }, 0, 100); // aggiorna ogni 100ms
+        }, 0, 100); 
     }
 
     private void inviaAggiornamentiProiettili() {
@@ -80,6 +192,14 @@ public class GameServer {
             }
         }
     }
+    
+    public synchronized void broadcast(String message) {
+        for (Handler client : clients) {
+            System.out.println("GameServer > " + client.getPlayerType() + " :" + message);
+            client.sendMessage(message);
+        }
+    }
+
 
     private boolean proiettileValido(Proiettile proiettile) {
         for (Dimension dim : gameDimensions.values()) {
@@ -100,6 +220,10 @@ public class GameServer {
                 System.out.println("Giocatore " + playerCount + " connesso, assegnato " + playerType);
 
                 Handler handler = new Handler(clientSocket, this, playerType);
+                
+                Nav navicella = new Nav(playerType);
+                handler.setNavicella(navicella);
+                
                 clients.add(handler);
                 new Thread(handler).start();
             } catch (IOException e) {
@@ -108,91 +232,11 @@ public class GameServer {
         }
     }
 
-
     public static void main(String[] args) throws IOException {
         GameServer server = new GameServer();
         server.start();
+        
+        
     }
-
-//    class Handler implements Runnable {
-//        private Socket clientSocket;
-//        private PrintWriter out;
-//        private BufferedReader in;
-//        private GameServer server;
-//        private String playerType;
-//
-//        public Handler(Socket socket, GameServer server, String playerType) throws IOException {
-//            this.clientSocket = socket;
-//            this.server = server;
-//            this.playerType = playerType;
-//            out = new PrintWriter(socket.getOutputStream(), true);
-//            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-//        }
-//
-//        public void run() {
-//            try {
-//                // Initial setup messages to client
-//                informClientOfPlayerType();
-//
-//                // Main loop for client communication
-//                String inputLine;
-//                while ((inputLine = in.readLine()) != null) {
-//                    processReceivedData(inputLine);
-//                }
-//            } catch (IOException e) {
-//                System.out.println("Exception in handler: " + e.getMessage());
-//            } finally {
-//                cleanup();
-//            }
-//        }
-//
-//        private void informClientOfPlayerType() {
-//            JsonObject message = new JsonObject();
-//            message.addProperty("tipo", "tipoNavicella");
-//            message.addProperty("navicella", playerType);
-//            sendMessage(message.toString());
-//        }
-//
-//        private void processReceivedData(String data) {
-//            JsonObject receivedJson = JsonParser.parseString(data).getAsJsonObject();
-//            String tipo = receivedJson.get("tipo").getAsString();
-//            switch (tipo) {
-//                case "dimensioniGioco":
-//                    int larghezza = receivedJson.get("larghezza").getAsInt();
-//                    int altezza = receivedJson.get("altezza").getAsInt();
-//                    server.setGameDimensions(playerType, larghezza, altezza);
-//                    break;
-//                case "posizione":
-//                case "sparo":
-//                    server.broadcast(data, playerType);
-//                    break;
-//                default:
-//                    System.err.println("GameServer: Tipo di evento sconosciuto: " + tipo);
-//                    break;
-//            }
-//            // Non facciamo il broadcast di ogni messaggio ricevuto; solo quelli che vogliamo condividere con altri client.
-//        }
-//
-//
-//        private void cleanup() {
-//            try {
-//                in.close();
-//                out.close();
-//                clientSocket.close();
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//            server.removeClient(this);
-//        }
-//
-//        void sendMessage(String message) {
-//            out.println(message);
-//        }
-//
-//        public String getPlayerType() {
-//            return playerType;
-//        }
-//    }
-
 
 }

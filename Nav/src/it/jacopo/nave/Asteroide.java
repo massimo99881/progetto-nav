@@ -36,12 +36,7 @@ public class Asteroide extends Cache {
     int x, y;
     protected int raggio;
     
-    public int getX() {
-        return x;
-    }
-    public int getY() {
-        return y;
-    }
+    
     
  // Metodo per gestire l'essere colpiti da un proiettile
     public void colpito() {
@@ -57,9 +52,7 @@ public class Asteroide extends Cache {
          
     }
     
-    public int getColpiSubiti() {
-        return colpiSubiti;
-    }
+    
 
     public static void precaricaImmagini() {
     	int asteroidNumber = Conf.asteroid_number;
@@ -93,10 +86,9 @@ public class Asteroide extends Cache {
         }
     }
 
-    public Asteroide(Pannello pannello, String nome, String imagePath) {
+    public Asteroide( String nome, String imagePath) {
     	super();
     	this.name=nome;
-    	this.pannello = pannello;
     	
     	// Caricamento e ridimensionamento dell'immagine con riuso tramite cache
     	// Recupera l'immagine dall'immagine cache, supponendo che sia già stata precaricata
@@ -216,6 +208,55 @@ public class Asteroide extends Cache {
     }
     Rectangle getBounds() {
 	    return getTransf().getBounds();
+	}
+    
+    public float getOpacita() {
+    	return this.opacita;
+    }
+    public double getAngoloRotazione() {
+    	return this.angoloRotazione;
+    }
+    public double getSpeed() {
+    	return this.speed;
+    }
+    public double getAngolo() {
+    	return this.angolo;
+    }
+    public int getX() {
+        return x;
+    }
+    public void setX(int x) {
+    	this.x = x;
+    }
+    public int getY() {
+        return y;
+    }
+    public void setY(int y) {
+    	this.y = y;
+    }
+    public String getName() {
+    	return this.name;
+    }
+    public int getColpiSubiti() {
+        return colpiSubiti;
+    }
+
+    //setters
+
+	public void setAngoloRotazione(double angoloRotazioneA) {
+		this.angoloRotazione = angoloRotazioneA;
+	}
+	public void setSpeed(double speedA) {
+		this.speed = speedA;
+	}
+	public void setAngolo(double angoloA) {
+		this.angolo = angoloA;
+	}
+	public void setOpacita(float opacitaA) {
+		this.opacita = opacitaA;
+	}
+	public void setColpiSubiti(int colpiSubitiA) {
+		this.colpiSubiti = colpiSubitiA;
 	}
 }
 

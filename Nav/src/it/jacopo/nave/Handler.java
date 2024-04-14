@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 public class Handler implements Runnable {
+	private Nav navicella;
     private Socket clientSocket;
     private PrintWriter out;
     private BufferedReader in;
@@ -88,6 +89,14 @@ public class Handler implements Runnable {
     
     public String getPlayerType() {
         return playerType;
+    }
+    
+    public Nav getNavicella() {
+        return navicella;
+    }
+
+    public void setNavicella(Nav navicella) {
+        this.navicella = navicella;
     }
 
     private void cleanup() {

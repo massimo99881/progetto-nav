@@ -5,8 +5,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Consumer;
 
 import com.google.gson.JsonObject;
@@ -90,15 +88,8 @@ public class GameClient {
                 System.out.println("Tipo di navicella assegnato: " + playerType);
                 break;
             case "aggiornamentoStato":
-                // Gestisci l'aggiornamento dello stato del gioco qui
                 break;
             case "posizione":
-                // Gestisci qui l'aggiornamento della posizione
-                // Ad esempio, potresti voler aggiornare la posizione di una navicella sul client
-                int x = receivedJson.get("x").getAsInt();
-                int y = receivedJson.get("y").getAsInt();
-                // Assicurati di avere un metodo o un modo per aggiornare la posizione basandoti su queste informazioni
-                //System.out.println("Aggiornamento posizione ricevuto: x=" + x + ", y=" + y);
                 break;
             case "sparo":
                 //String mittente = receivedJson.get("mittente").getAsString();
