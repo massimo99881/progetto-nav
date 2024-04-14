@@ -102,6 +102,22 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
         clipAudio.loop(Clip.LOOP_CONTINUOUSLY); // Loop continuo
 	}
 	
+	public void aggiornaAsteroidiDaDati(String datiJson) {
+	    JsonObject jsonObject = new JsonParser().parse(datiJson).getAsJsonObject();
+	    String nome = jsonObject.get("nome").getAsString();
+	    int x = jsonObject.get("x").getAsInt();
+	    int y = jsonObject.get("y").getAsInt();
+	    String immaginePath = jsonObject.get("immagine").getAsString();
+
+	    Asteroide asteroide = new Asteroide(nome, immaginePath);
+	    asteroide.setX(x);
+	    asteroide.setY(y);
+
+	    singleton.getObj().put(nome, asteroide);
+	    repaint();
+	}
+
+	
 	private void setupNavicelle() {
 		Nav nave = new Nav("navicella1");  //nave principale	
 		Nav nave2 = new Nav("navicella2"); //nave fantoccio per test collisioni
@@ -118,9 +134,10 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	private void setupNetworking() throws IOException {
 		try {
             socket = new Socket(serverAddress, serverPort);
+            
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            startClient(this::handleNetworkMessage);
+            startClient();
         } catch (IOException e) {
             throw new IOException("Impossibile stabilire la connessione con il server.", e);
         }
@@ -138,94 +155,55 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
         out.println(message);
     }
 	
-	public void startClient(Consumer<String> onMessageReceived) {
-        new Thread(() -> {
-            while (running) {
-                try {
-                    String message = in.readLine();
-                    if (message != null) {
-                        handleIncomingMessage(message, onMessageReceived);
-                    } else {
-                        System.out.println("Connessione terminata dal server.");
-                        break;
-                    }
-                } catch (IOException e) {
-                    if (running) { // Errore inaspettato
-                        System.err.println("Errore di connessione: " + e.getMessage());
-                    }
-                    break;
-                }
-            }
-           // close();
-        }, "Client-Receiver").start();
-    }
+	public void startClient() {
+	    new Thread(() -> {
+	        while (running) {
+	            try {
+	                String message = in.readLine();
+	                if (message != null) {
+	                    handleIncomingMessage(message); // Use handleIncomingMessage directly
+	                } else {
+	                    System.out.println("Connessione terminata dal server.");
+	                    break;
+	                }
+	            } catch (IOException e) {
+	                if (running) {
+	                    System.err.println("Errore di connessione: " + e.getMessage());
+	                }
+	                break;
+	            }
+	        }
+	    }, "Client-Receiver").start();
+	}
+
 	
-	private void handleIncomingMessage(String message, Consumer<String> onMessageReceived) {
+	private void handleIncomingMessage(String message) {
         JsonObject receivedJson = JsonParser.parseString(message).getAsJsonObject();
         String tipo = receivedJson.get("tipo").getAsString();
 
         switch (tipo) {
             case "tipoNavicella":
                 playerType = receivedJson.get("navicella").getAsString();
+                this.clientNavicella = playerType;
                 System.out.println("Tipo di navicella assegnato: " + playerType);
                 break;
-            case "aggiornamentoStato":
-                break;
             case "posizione":
-                break;
-            case "sparo":
-                //String mittente = receivedJson.get("mittente").getAsString();
-            	System.out.println("GameClient: "+receivedJson);
-                double xP = receivedJson.get("x").getAsDouble();
-                double yP = receivedJson.get("y").getAsDouble();
-                double angoloP = receivedJson.has("angolo") ? receivedJson.get("angolo").getAsDouble() : 0; // Assumiamo che il server invii anche l'angolo
-                String mittente = receivedJson.get("mittente").getAsString();
-                
-                singleton.getProiettile(xP, yP, angoloP, mittente);
-                
-                
-                break;
-
-            default:
-                System.err.println("GameClient: Tipo di messaggio sconosciuto: " + tipo);
-                break;
-        }
-
-        onMessageReceived.accept(message);
-    }
-
-	private void handleNetworkMessage(String message) {
-	    // Analizza il messaggio JSON
-		//System.out.println(message);
-		
-	    JsonObject jsonMessage = JsonParser.parseString(message).getAsJsonObject();
-
-	    // Estrai il tipo di evento dal messaggio
-	    String eventType = jsonMessage.get("tipo").getAsString();
-
-	    // Gestisci il tipo di evento
-	    switch (eventType) {
-	        case "tipoNavicella":
-	            // Imposta il tipo di navicella per questo client
-	            this.clientNavicella = jsonMessage.get("navicella").getAsString();
-	            break;
-	        case "posizione":
 	            // Estrai il nome della navicella e le coordinate dal messaggio
-	            String nomeNavicella = jsonMessage.get("nome").getAsString();
-	            int x = jsonMessage.get("x").getAsInt();
-	            int y = jsonMessage.get("y").getAsInt();
-	            double angolo = jsonMessage.get("angolo").getAsDouble();
+	            String nomeNavicella = receivedJson.get("nome").getAsString();
+	            int x = receivedJson.get("x").getAsInt();
+	            int y = receivedJson.get("y").getAsInt();
+	            double angolo = receivedJson.get("angolo").getAsDouble();
 	            if (!nomeNavicella.equals(this.clientNavicella)) {
 	                // Aggiorna la posizione della navicella avversaria
 	            	updateShipPosition(nomeNavicella, x, y, angolo);
 	            }
 	            break;
-	        case "sparo":
-	        	String mittente = jsonMessage.get("mittente").getAsString();
-	            double startX = jsonMessage.get("x").getAsDouble();
-	            double startY = jsonMessage.get("y").getAsDouble();
-	            double angoloP = jsonMessage.get("angolo").getAsDouble();
-	            System.out.println("Pannello:sparo: "+jsonMessage);
+            case "sparo":
+	        	String mittente = receivedJson.get("mittente").getAsString();
+	            double startX = receivedJson.get("x").getAsDouble();
+	            double startY = receivedJson.get("y").getAsDouble();
+	            double angoloP = receivedJson.get("angolo").getAsDouble();
+	            System.out.println("Pannello:sparo: "+receivedJson);
 	            //Proiettile proiettile = new Proiettile(startX, startY, angoloP);
 	            if (!mittente.equals(this.clientNavicella)) { // Assicurati che il proiettile non sia della propria navicella
 	                Proiettile proiettile = singleton.getProiettile(startX, startY, angoloP, mittente);
@@ -234,14 +212,14 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            
 	            break;
 	        case "aggiornamentoPosizioneAsteroide":
-	            String nomeAsteroide = jsonMessage.get("nome").getAsString();
-	            int xA = jsonMessage.get("x").getAsInt();
-	            int yA = jsonMessage.get("y").getAsInt();
-	            double angoloRotazioneA = jsonMessage.get("angoloRotazione").getAsDouble();
-	            double speedA = jsonMessage.get("speed").getAsDouble();
-	            double angoloA = jsonMessage.get("angolo").getAsDouble();
-	            float opacitaA = jsonMessage.get("opacita").getAsFloat();
-	            int colpiSubitiA = jsonMessage.get("colpiSubiti").getAsInt(); 
+	            String nomeAsteroide = receivedJson.get("nome").getAsString();
+	            int xA = receivedJson.get("x").getAsInt();
+	            int yA = receivedJson.get("y").getAsInt();
+	            double angoloRotazioneA = receivedJson.get("angoloRotazione").getAsDouble();
+	            double speedA = receivedJson.get("speed").getAsDouble();
+	            double angoloA = receivedJson.get("angolo").getAsDouble();
+	            float opacitaA = receivedJson.get("opacita").getAsFloat();
+	            int colpiSubitiA = receivedJson.get("colpiSubiti").getAsInt(); 
 
 	            Map<String, Cache> obj = singleton.getObj();
 	            Asteroide asteroide = (Asteroide) obj.get(nomeAsteroide);
@@ -255,16 +233,24 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	                asteroide.setColpiSubiti(colpiSubitiA);  
 	            }
 	            break;
+	        case "asteroide" :
+	            String nomeA = receivedJson.get("nome").getAsString();
 
+	            singleton.getObj().get(nomeA);
+	            aggiornaGioco(); 
+	        	break;
 	        case "collisione":
-	            String nomeAsteroideCollisione = jsonMessage.get("con").getAsString();
+	            String nomeAsteroideCollisione = receivedJson.get("con").getAsString();
 	            JOptionPane.showMessageDialog(null, "Collisione con " + nomeAsteroideCollisione);
 	            break;
-	        default:
-	            System.err.println("Pannello: Tipo di evento sconosciuto: " + eventType);
-	            break;
-	    }
-	}
+            default:
+                System.err.println("GameClient: Tipo di messaggio sconosciuto: " + tipo);
+                break;
+        }
+
+    }
+
+	
 	
 	public void sendPlayerPosition(int x, int y, double angolo) {
 	    JsonObject jsonMessage = new JsonObject();

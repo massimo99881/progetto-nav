@@ -35,6 +35,7 @@ public class Asteroide extends Cache {
 	double angolo;
     int x, y;
     protected int raggio;
+	private String immaginePath;
     
     
     
@@ -52,7 +53,9 @@ public class Asteroide extends Cache {
          
     }
     
-    
+    public String getNome() {
+    	return this.name;
+    }
 
     public static void precaricaImmagini() {
     	int asteroidNumber = Conf.asteroid_number;
@@ -89,6 +92,7 @@ public class Asteroide extends Cache {
     public Asteroide( String nome, String imagePath) {
     	super();
     	this.name=nome;
+    	this.immaginePath = imagePath;
     	
     	// Caricamento e ridimensionamento dell'immagine con riuso tramite cache
     	// Recupera l'immagine dall'immagine cache, supponendo che sia già stata precaricata
@@ -239,6 +243,9 @@ public class Asteroide extends Cache {
     }
     public int getColpiSubiti() {
         return colpiSubiti;
+    }
+    public String getImmaginePath() {
+    	return this.immaginePath;
     }
 
     //setters

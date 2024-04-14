@@ -2,6 +2,9 @@ package it.jacopo.nave;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -12,6 +15,8 @@ public class Handler implements Runnable {
     private BufferedReader in;
     private Server server;
     private String playerType; // Tipo di navicella assegnato a questo handler
+    private Pannello pannello;
+    private Singleton singleton = Singleton.getInstance(); 
 
     public Handler(Socket socket, Server server, String playerType) {
         this.clientSocket = socket;
@@ -23,6 +28,22 @@ public class Handler implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    
+    public void sendInitialAsteroids() {
+    	Map<String, Cache> tempObjects = singleton.getObj();
+    	for (Entry<String, Cache> entry : tempObjects.entrySet()) {
+	        Cache gameObject = entry.getValue();
+	        if (gameObject instanceof Asteroide) {
+	        	Asteroide asteroide = (Asteroide) gameObject;
+	        	JsonObject asteroideJson = new JsonObject();
+	            asteroideJson.addProperty("tipo", "asteroide");
+	            asteroideJson.addProperty("nome", asteroide.getNome());
+	            asteroideJson.addProperty("x", asteroide.getX());
+	            asteroideJson.addProperty("y", asteroide.getY());
+	            sendMessage(asteroideJson.toString());
+	        }
+    	}
     }
 
     @Override
@@ -65,7 +86,9 @@ public class Handler implements Runnable {
                         server.setGameDimensions(this.playerType, larghezza, altezza);
                         System.out.println("Dimensioni gioco ricevute da " + clientSocket.getInetAddress().getHostAddress() + ": " + larghezza + "x" + altezza);
                         break;
-                    
+                    case "asteroide":
+                        this.pannello.aggiornaAsteroidiDaDati(receivedJson.toString());
+                        break;
                     default:
                         System.err.println("Tipo di evento sconosciuto: " + tipo);
                         break;
