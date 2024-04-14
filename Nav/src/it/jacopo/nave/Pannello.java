@@ -17,14 +17,19 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Area;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Consumer;
 import java.util.Random;
 
 import javax.imageio.ImageIO;
@@ -43,7 +48,13 @@ import com.google.gson.JsonParser;
 
 public class Pannello extends JPanel implements KeyListener, MouseMotionListener, ComponentListener{
 	
-	private GameClient client;
+	private Socket socket;
+    private PrintWriter out;
+    private BufferedReader in;
+    private final String serverAddress = "127.0.0.1";
+    private final int serverPort = 8080;
+    private volatile boolean running = true; // Flag per controllare il ciclo di ricezione
+    private String playerType;
 	
 	private int sfondoX = 0;
 	private final int VELOCITA_SFONDO = -1; // Sposta lo sfondo di 1 pixel a ogni tick del timer verso sinistra
@@ -69,7 +80,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	private Singleton singleton ;
 	private Clip clipAudio;
 	
-	public Pannello() {
+	public Pannello() throws IOException {
 		this.singleton = Singleton.getInstance();
 		setupNetworking();
 		setupNavicelle();
@@ -104,13 +115,83 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
         singleton.getObj().put(nave2.nome, nave2);
 	}
 	
-	private void setupNetworking() {
-        try {
-            this.client = new GameClient(singleton);
-            this.client.startClient(this::handleNetworkMessage);
+	private void setupNetworking() throws IOException {
+		try {
+            socket = new Socket(serverAddress, serverPort);
+            out = new PrintWriter(socket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            startClient(this::handleNetworkMessage);
         } catch (IOException e) {
-            System.err.println("Errore nell'inizializzare il client di rete: " + e.getMessage());
+            throw new IOException("Impossibile stabilire la connessione con il server.", e);
         }
+    }
+	
+	public void sendGameDimensions(int width, int height) {
+        JsonObject jsonMessage = new JsonObject();
+        jsonMessage.addProperty("tipo", "dimensioniGioco");
+        jsonMessage.addProperty("larghezza", width);
+        jsonMessage.addProperty("altezza", height);
+        send(jsonMessage.toString());
+    }
+	
+	public void send(String message) {
+        out.println(message);
+    }
+	
+	public void startClient(Consumer<String> onMessageReceived) {
+        new Thread(() -> {
+            while (running) {
+                try {
+                    String message = in.readLine();
+                    if (message != null) {
+                        handleIncomingMessage(message, onMessageReceived);
+                    } else {
+                        System.out.println("Connessione terminata dal server.");
+                        break;
+                    }
+                } catch (IOException e) {
+                    if (running) { // Errore inaspettato
+                        System.err.println("Errore di connessione: " + e.getMessage());
+                    }
+                    break;
+                }
+            }
+           // close();
+        }, "Client-Receiver").start();
+    }
+	
+	private void handleIncomingMessage(String message, Consumer<String> onMessageReceived) {
+        JsonObject receivedJson = JsonParser.parseString(message).getAsJsonObject();
+        String tipo = receivedJson.get("tipo").getAsString();
+
+        switch (tipo) {
+            case "tipoNavicella":
+                playerType = receivedJson.get("navicella").getAsString();
+                System.out.println("Tipo di navicella assegnato: " + playerType);
+                break;
+            case "aggiornamentoStato":
+                break;
+            case "posizione":
+                break;
+            case "sparo":
+                //String mittente = receivedJson.get("mittente").getAsString();
+            	System.out.println("GameClient: "+receivedJson);
+                double xP = receivedJson.get("x").getAsDouble();
+                double yP = receivedJson.get("y").getAsDouble();
+                double angoloP = receivedJson.has("angolo") ? receivedJson.get("angolo").getAsDouble() : 0; // Assumiamo che il server invii anche l'angolo
+                String mittente = receivedJson.get("mittente").getAsString();
+                
+                singleton.getProiettile(xP, yP, angoloP, mittente);
+                
+                
+                break;
+
+            default:
+                System.err.println("GameClient: Tipo di messaggio sconosciuto: " + tipo);
+                break;
+        }
+
+        onMessageReceived.accept(message);
     }
 
 	private void handleNetworkMessage(String message) {
@@ -192,7 +273,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    jsonMessage.addProperty("x", x);
 	    jsonMessage.addProperty("y", y);
 	    jsonMessage.addProperty("angolo", angolo); // Aggiungi l'angolo
-	    client.send(jsonMessage.toString());
+	    send(jsonMessage.toString());
 	}
 
 	public void updateShipPosition(String nomeNavicella, int x, int y, double angolo) {
@@ -263,7 +344,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    // Verifica se il pannello è stato effettivamente visualizzato con dimensioni valide
 	    if (this.getWidth() > 0 && this.getHeight() > 0) {
 	        // Invia le dimensioni al server
-	        client.sendGameDimensions(this.getWidth(), this.getHeight());
+	        sendGameDimensions(this.getWidth(), this.getHeight());
 	    } else {
 	        // Se le dimensioni non sono valide, potresti voler riprovare dopo un breve ritardo
 	        SwingUtilities.invokeLater(() -> {
@@ -313,7 +394,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            jsonMessage.addProperty("y", startY);
 	            jsonMessage.addProperty("mittente", clientNavicella);
 	            jsonMessage.addProperty("angolo", nave.angolo);
-	            client.send(jsonMessage.toString());
+	            send(jsonMessage.toString());
 	        }
 	    }
 	}

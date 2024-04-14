@@ -1,11 +1,13 @@
 package it.jacopo.nave;
 
 
+import java.io.IOException;
+
 import javax.swing.JFrame;
 
 public class Main {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 	    
 	    int h = Conf.FRAME_HEIGHT;
 	    int w = Conf.FRAME_WIDTH;
