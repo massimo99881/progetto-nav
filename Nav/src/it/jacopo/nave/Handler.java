@@ -40,6 +40,18 @@ public class Handler implements Runnable {
                 String tipo = receivedJson.get("tipo").getAsString();
 
                 switch (tipo) {
+	                case "sparo":
+	                    // Gestione di un messaggio di sparo
+	                	System.out.println("Handler < "+this.playerType+" sparo: "+receivedJson);
+	                    //double startX = receivedJson.get("x").getAsDouble();
+	                    //double startY = receivedJson.get("y").getAsDouble();
+	                    //double angolo = receivedJson.get("angolo").getAsDouble();
+	                    //String id = receivedJson.get("id").getAsString();
+	                    // Use ProiettilePool directly
+	                    //Proiettile proiettile = ProiettilePool.getInstance().getProiettile(startX, startY, angolo, this.playerType);
+	                    //server.broadcast(proiettile.toJson().toString(), this.playerType);
+                    
+                    //break;
                     case "posizione":
                         // Inoltra il messaggio di posizione agli altri client
                         server.broadcast(receivedText, this.playerType);
@@ -52,18 +64,7 @@ public class Handler implements Runnable {
                         server.setGameDimensions(this.playerType, larghezza, altezza);
                         System.out.println("Dimensioni gioco ricevute da " + clientSocket.getInetAddress().getHostAddress() + ": " + larghezza + "x" + altezza);
                         break;
-                    case "sparo":
-                        // Gestione di un messaggio di sparo
-                    	System.out.println("Handler < "+this.playerType+" sparo: "+receivedJson);
-                        double startX = receivedJson.get("x").getAsDouble();
-                        double startY = receivedJson.get("y").getAsDouble();
-                        double angolo = receivedJson.get("angolo").getAsDouble();
-                        String id = receivedJson.get("id").getAsString();
-                        // Use ProiettilePool directly
-                        Proiettile proiettile = ProiettilePool.getInstance().getProiettile(startX, startY, angolo, this.playerType);
-                        server.broadcast(proiettile.toJson().toString(), this.playerType);
-                        
-                        break;
+                    
                     default:
                         System.err.println("Tipo di evento sconosciuto: " + tipo);
                         break;

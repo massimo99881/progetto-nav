@@ -122,15 +122,15 @@ public class GameClient {
     }
 
 
-    public static void main(String[] args) {
-        try {
-        	ProiettilePool proiettilePool = ProiettilePool.getInstance();
-            GameClient client = new GameClient(proiettilePool);
-            client.startClient(message -> {
-                // Qui puoi decidere come gestire i messaggi ricevuti
-            });
-        } catch (IOException e) {
-            System.err.println("Errore nell'avviare il client: " + e.getMessage());
-        }
-    }
+//    public static void main(String[] args) {
+//        try {
+//        	ProiettilePool proiettilePool = ProiettilePool.getInstance();
+//            GameClient client = new GameClient(proiettilePool);
+//            client.startClient(message -> {
+//                // Qui puoi decidere come gestire i messaggi ricevuti
+//            });
+//        } catch (IOException e) {
+//            System.err.println("Errore nell'avviare il client: " + e.getMessage());
+//        }
+//    }
 }

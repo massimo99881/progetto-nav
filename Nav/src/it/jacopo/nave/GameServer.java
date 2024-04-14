@@ -114,85 +114,85 @@ public class GameServer {
         server.start();
     }
 
-    class Handler implements Runnable {
-        private Socket clientSocket;
-        private PrintWriter out;
-        private BufferedReader in;
-        private GameServer server;
-        private String playerType;
-
-        public Handler(Socket socket, GameServer server, String playerType) throws IOException {
-            this.clientSocket = socket;
-            this.server = server;
-            this.playerType = playerType;
-            out = new PrintWriter(socket.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        }
-
-        public void run() {
-            try {
-                // Initial setup messages to client
-                informClientOfPlayerType();
-
-                // Main loop for client communication
-                String inputLine;
-                while ((inputLine = in.readLine()) != null) {
-                    processReceivedData(inputLine);
-                }
-            } catch (IOException e) {
-                System.out.println("Exception in handler: " + e.getMessage());
-            } finally {
-                cleanup();
-            }
-        }
-
-        private void informClientOfPlayerType() {
-            JsonObject message = new JsonObject();
-            message.addProperty("tipo", "tipoNavicella");
-            message.addProperty("navicella", playerType);
-            sendMessage(message.toString());
-        }
-
-        private void processReceivedData(String data) {
-            JsonObject receivedJson = JsonParser.parseString(data).getAsJsonObject();
-            String tipo = receivedJson.get("tipo").getAsString();
-            switch (tipo) {
-                case "dimensioniGioco":
-                    int larghezza = receivedJson.get("larghezza").getAsInt();
-                    int altezza = receivedJson.get("altezza").getAsInt();
-                    server.setGameDimensions(playerType, larghezza, altezza);
-                    break;
-                case "posizione":
-                case "sparo":
-                    server.broadcast(data, playerType);
-                    break;
-                default:
-                    System.err.println("GameServer: Tipo di evento sconosciuto: " + tipo);
-                    break;
-            }
-            // Non facciamo il broadcast di ogni messaggio ricevuto; solo quelli che vogliamo condividere con altri client.
-        }
-
-
-        private void cleanup() {
-            try {
-                in.close();
-                out.close();
-                clientSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            server.removeClient(this);
-        }
-
-        void sendMessage(String message) {
-            out.println(message);
-        }
-
-        public String getPlayerType() {
-            return playerType;
-        }
-    }
+//    class Handler implements Runnable {
+//        private Socket clientSocket;
+//        private PrintWriter out;
+//        private BufferedReader in;
+//        private GameServer server;
+//        private String playerType;
+//
+//        public Handler(Socket socket, GameServer server, String playerType) throws IOException {
+//            this.clientSocket = socket;
+//            this.server = server;
+//            this.playerType = playerType;
+//            out = new PrintWriter(socket.getOutputStream(), true);
+//            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+//        }
+//
+//        public void run() {
+//            try {
+//                // Initial setup messages to client
+//                informClientOfPlayerType();
+//
+//                // Main loop for client communication
+//                String inputLine;
+//                while ((inputLine = in.readLine()) != null) {
+//                    processReceivedData(inputLine);
+//                }
+//            } catch (IOException e) {
+//                System.out.println("Exception in handler: " + e.getMessage());
+//            } finally {
+//                cleanup();
+//            }
+//        }
+//
+//        private void informClientOfPlayerType() {
+//            JsonObject message = new JsonObject();
+//            message.addProperty("tipo", "tipoNavicella");
+//            message.addProperty("navicella", playerType);
+//            sendMessage(message.toString());
+//        }
+//
+//        private void processReceivedData(String data) {
+//            JsonObject receivedJson = JsonParser.parseString(data).getAsJsonObject();
+//            String tipo = receivedJson.get("tipo").getAsString();
+//            switch (tipo) {
+//                case "dimensioniGioco":
+//                    int larghezza = receivedJson.get("larghezza").getAsInt();
+//                    int altezza = receivedJson.get("altezza").getAsInt();
+//                    server.setGameDimensions(playerType, larghezza, altezza);
+//                    break;
+//                case "posizione":
+//                case "sparo":
+//                    server.broadcast(data, playerType);
+//                    break;
+//                default:
+//                    System.err.println("GameServer: Tipo di evento sconosciuto: " + tipo);
+//                    break;
+//            }
+//            // Non facciamo il broadcast di ogni messaggio ricevuto; solo quelli che vogliamo condividere con altri client.
+//        }
+//
+//
+//        private void cleanup() {
+//            try {
+//                in.close();
+//                out.close();
+//                clientSocket.close();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//            server.removeClient(this);
+//        }
+//
+//        void sendMessage(String message) {
+//            out.println(message);
+//        }
+//
+//        public String getPlayerType() {
+//            return playerType;
+//        }
+//    }
 
 
 }
