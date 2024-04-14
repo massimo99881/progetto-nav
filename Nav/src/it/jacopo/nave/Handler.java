@@ -1,9 +1,10 @@
 package it.jacopo.nave;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -15,8 +16,6 @@ public class Handler implements Runnable {
     private BufferedReader in;
     private Server server;
     private String playerType; // Tipo di navicella assegnato a questo handler
-    private Pannello pannello;
-    private Singleton singleton = Singleton.getInstance(); 
 
     public Handler(Socket socket, Server server, String playerType) {
         this.clientSocket = socket;
@@ -30,26 +29,9 @@ public class Handler implements Runnable {
         }
     }
     
-    public void sendInitialAsteroids() {
-    	Map<String, Cache> tempObjects = singleton.getObj();
-    	for (Entry<String, Cache> entry : tempObjects.entrySet()) {
-	        Cache gameObject = entry.getValue();
-	        if (gameObject instanceof Asteroide) {
-	        	Asteroide asteroide = (Asteroide) gameObject;
-	        	JsonObject asteroideJson = new JsonObject();
-	            asteroideJson.addProperty("tipo", "asteroide");
-	            asteroideJson.addProperty("nome", asteroide.getNome());
-	            asteroideJson.addProperty("x", asteroide.getX());
-	            asteroideJson.addProperty("y", asteroide.getY());
-	            sendMessage(asteroideJson.toString());
-	        }
-    	}
-    }
-
     @Override
     public void run() {
         try {
-            // Invio al client il tipo di navicella assegnato
             JsonObject jsonMessage = new JsonObject();
             jsonMessage.addProperty("tipo", "tipoNavicella");
             jsonMessage.addProperty("navicella", playerType);
@@ -63,31 +45,14 @@ public class Handler implements Runnable {
 
                 switch (tipo) {
 	                case "sparo":
-	                    // Gestione di un messaggio di sparo
-	                	System.out.println("Handler < "+this.playerType+" sparo: "+receivedJson);
-	                    //double startX = receivedJson.get("x").getAsDouble();
-	                    //double startY = receivedJson.get("y").getAsDouble();
-	                    //double angolo = receivedJson.get("angolo").getAsDouble();
-	                    //String id = receivedJson.get("id").getAsString();
-	                    // Use ProiettilePool directly
-	                    //Proiettile proiettile = ProiettilePool.getInstance().getProiettile(startX, startY, angolo, this.playerType);
-	                    //server.broadcast(proiettile.toJson().toString(), this.playerType);
-                    
-                    //break;
                     case "posizione":
-                        // Inoltra il messaggio di posizione agli altri client
                         server.broadcast(receivedText, this.playerType);
                         break;
                     case "dimensioniGioco":
                         // Estrai le dimensioni del gioco dal messaggio
                         int larghezza = receivedJson.get("larghezza").getAsInt();
                         int altezza = receivedJson.get("altezza").getAsInt();
-                        // Chiama il metodo setGameDimensions del server
                         server.setGameDimensions(this.playerType, larghezza, altezza);
-                        System.out.println("Dimensioni gioco ricevute da " + clientSocket.getInetAddress().getHostAddress() + ": " + larghezza + "x" + altezza);
-                        break;
-                    case "asteroide":
-                        this.pannello.aggiornaAsteroidiDaDati(receivedJson.toString());
                         break;
                     default:
                         System.err.println("Tipo di evento sconosciuto: " + tipo);

@@ -23,65 +23,15 @@ public class Server {
     private int playerCount = 0;
     private final Map<String, Dimension> gameDimensions = new HashMap<>();
     private Singleton singleton = Singleton.getInstance(); 
-    private List<Asteroide> asteroidi = new CopyOnWriteArrayList<>();
-    
-    
-    private Timer aggiungiAsteroidiTimer;
-    private int aggiunteEffettuate = 0;
 
     public Server() throws IOException {
         serverSocket = new ServerSocket(port);
         System.out.println("Server avviato sulla porta " + port);
-        
         Asteroide.precaricaImmagini();
-        
         iniziaTimerAggiornamentiProiettili();
-        iniziaTimerAggiornamentiAsteroidi();
-        
-        // Inizializza 15 asteroidi con posizioni iniziali visibili
-	    for (int i = 1; i <= Conf.asteroid_number; i++) { 
-	    	String nomeAsteroide = "asteroide" + i;
-	        Asteroide asteroide = new Asteroide(nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png");
-	        asteroide.x = Conf.FRAME_WIDTH; // Tutti gli asteroidi partono dalla stessa posizione X iniziale
-	        Random rand = new Random();
-	        int numeroCasuale = rand.nextInt(441) + 10; // Genera un numero casuale tra 10 (incluso) e 451 (escluso)
-	        asteroide.y = numeroCasuale; // Distribuisce gli asteroidi verticalmente
-	        singleton.getNomiAsteroidi().add(nomeAsteroide);
-	        singleton.getObj().put(asteroide.name, asteroide);
-	    }
+	    
     }
     
-    private void aggiornaPosizioniAsteroidi() {
-        for (Asteroide asteroide : asteroidi) {
-            asteroide.updateMovement();
-            JsonObject jsonMessage = new JsonObject();
-            jsonMessage.addProperty("tipo", "aggiornamentoPosizioneAsteroide");
-            jsonMessage.addProperty("nome", asteroide.getName());
-            jsonMessage.addProperty("x", asteroide.getX());
-            jsonMessage.addProperty("y", asteroide.getY());
-            jsonMessage.addProperty("angoloRotazione", asteroide.getAngoloRotazione());
-            jsonMessage.addProperty("speed", asteroide.getSpeed());
-            jsonMessage.addProperty("angolo", asteroide.getAngolo());
-            jsonMessage.addProperty("opacita", asteroide.getOpacita());
-            jsonMessage.addProperty("colpiSubiti", asteroide.getColpiSubiti());  // Aggiungendo il numero di colpi subiti
-            broadcast(jsonMessage.toString());
-        }
-    }
-    
-    private void verificaCollisioni() {
-        for (Handler client : clients) {
-            Nav navicella = client.getNavicella();
-            for (Asteroide asteroide : asteroidi) {
-                if (navicella.getBounds().intersects(asteroide.getBounds())) {
-                    JsonObject jsonMessage = new JsonObject();
-                    jsonMessage.addProperty("tipo", "collisione");
-                    jsonMessage.addProperty("con", asteroide.getName());
-                    client.sendMessage(jsonMessage.toString());
-                }
-            }
-        }
-    }
-
     public void setGameDimensions(String clientID, int larghezza, int altezza) {
         gameDimensions.put(clientID, new Dimension(larghezza, altezza));
         System.out.println("Dimensioni gioco aggiornate per " + clientID + ": " + larghezza + "x" + altezza);
@@ -91,58 +41,6 @@ public class Server {
         clients.remove(clientHandler);
         System.out.println("Client disconnesso: " + clientHandler.getPlayerType());
     }
-    
-    private void iniziaTimerAggiornamentiAsteroidi() {
-    	
-        aggiungiAsteroidiTimer = new Timer(true);
-        aggiungiAsteroidiTimer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-            	
-            	if (aggiunteEffettuate < Conf.Level_Total) {
-            		
-//                    aggiungiAsteroidi();
-//                    aggiunteEffettuate++;
-                } else {
-//                	try {
-//        		        File fileAudio = new File(Conf._RESOURCES_AUDIO_PATH + "winner.wav"); 
-//        		        AudioInputStream audioStream = AudioSystem.getAudioInputStream(fileAudio);
-//        		        clipAudio = AudioSystem.getClip();
-//        		        clipAudio.open(audioStream);
-//        		        clipAudio.start();
-//        		    } catch (UnsupportedAudioFileException | IOException | LineUnavailableException ex) {
-//        		        ex.printStackTrace();
-//        		    }
-//                    aggiungiAsteroidiTimer.stop(); // Ferma il Timer
-//                    JOptionPane.showMessageDialog(null, "Hai vinto!", "Complimenti", JOptionPane.INFORMATION_MESSAGE);
-//                    resetGame(); // Chiama resetGame dopo che l'utente ha fatto click su "OK"
-                }
-            	
-                aggiornaPosizioniAsteroidi();
-                verificaCollisioni();
-            }
-        }, 0, Conf.Level_timer);  
-    }
-    
- 	private void aggiungiAsteroidi() {
- 		
- 	    for (int i = 0; i < Conf.MAX_AGGIUNTE; i++) {
- 	        aggiungiAsteroide(singleton.getObj()); 
- 	    }
- 	}
- 	
- 	private void aggiungiAsteroide(Map<String, Cache> obj) {
- 	    Random rand = new Random();
- 	    int posizioneYCasuale = rand.nextInt(441) + 10; 
- 	    int indiceImmagineCasuale = rand.nextInt(Conf.asteroid_number) + 1; 
- 	    String nomeAsteroide = "asteroide" + (singleton.getNomiAsteroidi().size() + 1);
- 	    singleton.getNomiAsteroidi().add(nomeAsteroide); 
- 	    Asteroide asteroide = new Asteroide(nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + indiceImmagineCasuale + ".png");
- 	    Dimension n = gameDimensions.get("navicella1");
- 	    asteroide.x = Conf.FRAME_WIDTH-5;
- 	    asteroide.y = posizioneYCasuale;
- 	    obj.put(nomeAsteroide, asteroide);
- 	}
     
     private void iniziaTimerAggiornamentiProiettili() {
     	Timer timerAggiornamentoProiettili = new Timer(true);
@@ -199,7 +97,6 @@ public class Server {
         }
     }
 
-
     private boolean proiettileValido(Proiettile proiettile) {
         for (Dimension dim : gameDimensions.values()) {
             if (proiettile.getX() >= 0 && proiettile.getX() <= dim.width &&
@@ -225,7 +122,6 @@ public class Server {
                 
                 clients.add(handler);
                 new Thread(handler).start();
-                handler.sendInitialAsteroids();
             } catch (IOException e) {
                 e.printStackTrace();
             }
