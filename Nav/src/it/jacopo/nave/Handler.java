@@ -10,10 +10,10 @@ public class Handler implements Runnable {
     private Socket clientSocket;
     private PrintWriter out;
     private BufferedReader in;
-    private GameServer server;
+    private Server server;
     private String playerType; // Tipo di navicella assegnato a questo handler
 
-    public Handler(Socket socket, GameServer server, String playerType) {
+    public Handler(Socket socket, Server server, String playerType) {
         this.clientSocket = socket;
         this.server = server;
         this.playerType = playerType;

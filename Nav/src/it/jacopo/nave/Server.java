@@ -16,7 +16,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.google.gson.JsonObject;
 
-public class GameServer {
+public class Server {
     private ServerSocket serverSocket;
     private final int port = 8080;
     private final List<Handler> clients = new CopyOnWriteArrayList<>();
@@ -29,7 +29,7 @@ public class GameServer {
     private Timer aggiungiAsteroidiTimer;
     private int aggiunteEffettuate = 0;
 
-    public GameServer() throws IOException {
+    public Server() throws IOException {
         serverSocket = new ServerSocket(port);
         System.out.println("Server avviato sulla porta " + port);
         
@@ -232,7 +232,7 @@ public class GameServer {
     }
 
     public static void main(String[] args) throws IOException {
-        GameServer server = new GameServer();
+        Server server = new Server();
         server.start();
         
         
