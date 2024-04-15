@@ -53,9 +53,8 @@ public class Server {
     	Map<String, Cache> imageCache = Singleton.getInstance().getImageCache();
         if (!imageCache.containsKey(path)) {
         	try {
-        		Random rand = new Random();
                 BufferedImage originalImage = ImageIO.read(new File(path));
-                double scaleFactor = !path.contains("asteroide1.png") ? 0.2 + (0.45 - 0.2) * rand.nextDouble() : 0.2;
+                double scaleFactor = 0.2;
                 //double scaleFactor = 0.2 + (0.45 - 0.2) * rand.nextDouble();
                 int newWidth = (int) (originalImage.getWidth() * scaleFactor);
                 int newHeight = (int) (originalImage.getHeight() * scaleFactor);
@@ -201,9 +200,7 @@ public class Server {
             	    	String nomeAsteroide = "asteroide" + i;
             	        Asteroide asteroide = new Asteroide(null, nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png");
             	        asteroide.x = Conf.FRAME_WIDTH; 
-            	        Random rand = new Random();
-            	        int numeroCasuale = rand.nextInt(441) + 10; 
-            	        asteroide.y = numeroCasuale; 
+            	        asteroide.y = i % Conf.FRAME_WIDTH * 100; 
             	        singleton.getNomiAsteroidi().add(nomeAsteroide);
             	        singleton.getObj().put(asteroide.name, asteroide);
             	        
