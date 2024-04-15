@@ -25,7 +25,7 @@ public class Asteroide extends Cache {
     final double MIN_SPEED = 0.5;
     final double MAX_SPEED = 1.5;
     float opacita = 1.0f; // Opacità iniziale al 100%
-    static final Map<String, Cache> imageCache = new HashMap<String, Cache>();
+    
     private AffineTransform cachedTransform;
     private double prevX, prevY, prevAngoloRotazione;
     private Pannello pannello; // Riferimento al pannello
@@ -36,7 +36,6 @@ public class Asteroide extends Cache {
     int x, y;
     protected int raggio;
 	private String immaginePath;
-    
     
     
  // Metodo per gestire l'essere colpiti da un proiettile
@@ -57,57 +56,21 @@ public class Asteroide extends Cache {
     	return this.name;
     }
 
-    public static void precaricaImmagini() {
-    	int asteroidNumber = Conf.asteroid_number;
-        // Caricamento e cache delle prime 15 immagini con nomi specifici
-        for (int i = 1; i <= asteroidNumber; i++) {
-            String percorso = Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png";
-            caricaImmagine(percorso);
-        }
-    }
-
-    private static void caricaImmagine(String path) {
-        // Verifica se l'immagine è già stata caricata nella cache
-        if (!imageCache.containsKey(path)) {
-        	try {
-        		Random rand = new Random();
-                BufferedImage originalImage = ImageIO.read(new File(path));
-                double scaleFactor = !path.contains("asteroide1.png") ? 0.2 + (0.45 - 0.2) * rand.nextDouble() : 0.2;
-                //double scaleFactor = 0.2 + (0.45 - 0.2) * rand.nextDouble();
-                int newWidth = (int) (originalImage.getWidth() * scaleFactor);
-                int newHeight = (int) (originalImage.getHeight() * scaleFactor);
-                Cache ac = new Cache(originalImage.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH));
-                imageCache.put(path, ac);
-            } 
-        	catch (IOException e) {
-                e.printStackTrace();
-            }
-        	catch (Exception e) {
-                System.err.println("Errore nel caricamento dell'immagine da: " + path);
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public Asteroide( String nome, String imagePath) {
+    public Asteroide(Pannello pan, String nome, String imagePath) {
     	super();
+    	this.pannello = pan;
     	this.name=nome;
     	this.immaginePath = imagePath;
+    	Map<String, Cache> imageCache = Singleton.getInstance().getImageCache();
     	
-    	// Caricamento e ridimensionamento dell'immagine con riuso tramite cache
-    	// Recupera l'immagine dall'immagine cache, supponendo che sia già stata precaricata
+    	if(imageCache.get(imagePath)==null) {
+    		System.out.println("***");
+    	}
+    	
         this.image = imageCache.get(imagePath).getImage();
-        //this.image = originalImage.getScaledInstance(newWidth, newHeight, Image.SCALE_FAST);
-        
     	ANGLE_BASE = (Math.random() - 0.5) * 2; // angolo traiettoria
-         
         this.speed = 5.0 + Math.random() * 4.0; // Velocità casuale da 2.0 a 5.0
-
         shape = imageCache.get(imagePath).getPolygon();
-        //TODO piu oneroso: aggiorna shape da image
-        //shape = getPolygonFromImage(toBufferedImage(this.image));
-
-        // Imposta una velocità di rotazione casuale
         angoloRotazione = (Math.random() * 2 - 1) * Math.PI / 180;
         if (Math.random() > 0.5) {
             angoloRotazione *= -1; // Cambia il verso della rotazione
@@ -171,13 +134,13 @@ public class Asteroide extends Cache {
     void updateMovement() {
 
         // Aggiorna la velocità con una variazione casuale
-        speed += (Math.random() - 0.5) * ACCELERATION_CHANGE;
+        speed += (0.5) * ACCELERATION_CHANGE;
         speed = Math.max(MIN_SPEED, Math.min(MAX_SPEED, speed));
 
         // Applica una variazione angolare casuale entro un range più ampio per una curvatura maggiore della traiettoria
         double MAX_ANGLE_VARIATION = Math.PI / 18; 
         // Incremento della variazione angolare per una curvatura maggiore
-        double angleVariation = (Math.random() - 0.5) * 2 * MAX_ANGLE_VARIATION;
+        double angleVariation = (0.5) * 2 * MAX_ANGLE_VARIATION;
         angolo = ANGLE_BASE + angleVariation;
 
         // Aggiorna la posizione dell'asteroide basandosi sulla sua velocità e angolo aggiornati

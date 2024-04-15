@@ -9,9 +9,12 @@ import java.util.Map;
 public class Singleton {
     private final List<Proiettile> available = new LinkedList<>();
     private final List<Proiettile> active = new LinkedList<>();
-    private Map<String, Cache> obj = new HashMap<>();
+    private final Map<String, Cache> obj = new HashMap<>();
+    private final Map<String, Cache> imageCache = new HashMap<String, Cache>();
+    private final List<String> nomiAsteroidi = new ArrayList<>();
+    
     private static Singleton instance = new Singleton();
-    private List<String> nomiAsteroidi = new ArrayList<>();
+    
     private Singleton() {}
 
     public static Singleton getInstance() {
@@ -45,5 +48,9 @@ public class Singleton {
 
 	public List<String> getNomiAsteroidi() {
 		return nomiAsteroidi;
+	}
+
+	public Map<String, Cache> getImageCache() {
+		return imageCache;
 	}
 }

@@ -6,7 +6,7 @@ import java.io.IOException;
 import javax.swing.JFrame;
 
 public class Client {
-
+	
 	public static void main(String[] args) throws IOException {
 	    
 	    int h = Conf.FRAME_HEIGHT;
@@ -23,4 +23,5 @@ public class Client {
 		frame.setVisible(true);
 	    pan.requestFocusInWindow();
 	}
+	
 }

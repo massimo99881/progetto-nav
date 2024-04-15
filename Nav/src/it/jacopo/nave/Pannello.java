@@ -17,6 +17,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Area;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -80,6 +81,22 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	
 	public Pannello() throws IOException {
 		this.singleton = Singleton.getInstance();
+		
+		precaricaImmagini();
+        
+        // Inizializza 15 asteroidi con posizioni iniziali visibili
+	    for (int i = 1; i <= Conf.asteroid_number; i++) { 
+	    	String nomeAsteroide = "asteroide" + i;
+	        Asteroide asteroide = new Asteroide(this, nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png");
+	        asteroide.x = Conf.FRAME_WIDTH; 
+	        Random rand = new Random();
+	        int numeroCasuale = rand.nextInt(441) + 10; 
+	        asteroide.y = numeroCasuale; 
+	        singleton.getNomiAsteroidi().add(nomeAsteroide);
+	        singleton.getObj().put(asteroide.name, asteroide);
+	        
+	    }
+		
 		setupNetworking();
 		setupNavicelle();
 		setupSfondo();
@@ -99,6 +116,38 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
         clipAudio.start(); // Avvia l'audio
         clipAudio.loop(Clip.LOOP_CONTINUOUSLY); // Loop continuo
 	}
+	
+	void precaricaImmagini() {
+    	int asteroidNumber = Conf.asteroid_number;
+        // Caricamento e cache delle prime 15 immagini con nomi specifici
+        for (int i = 1; i <= asteroidNumber; i++) {
+            String percorso = Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png";
+            caricaImmagine(percorso);
+        }
+    }
+
+    void caricaImmagine(String path) {
+    	Map<String, Cache> imageCache = Singleton.getInstance().getImageCache();
+        if (!imageCache.containsKey(path)) {
+        	try {
+        		Random rand = new Random();
+                BufferedImage originalImage = ImageIO.read(new File(path));
+                double scaleFactor = !path.contains("asteroide1.png") ? 0.2 + (0.45 - 0.2) * rand.nextDouble() : 0.2;
+                //double scaleFactor = 0.2 + (0.45 - 0.2) * rand.nextDouble();
+                int newWidth = (int) (originalImage.getWidth() * scaleFactor);
+                int newHeight = (int) (originalImage.getHeight() * scaleFactor);
+                Cache ac = new Cache(originalImage.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH));
+                singleton.getImageCache().put(path, ac);
+            } 
+        	catch (IOException e) {
+                e.printStackTrace();
+            }
+        	catch (Exception e) {
+                System.err.println("Errore nel caricamento dell'immagine da: " + path);
+                e.printStackTrace();
+            }
+        }
+    }
 	
 	private void setupNavicelle() {
 		Nav nave = new Nav("navicella1");  //nave principale	
@@ -142,7 +191,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            try {
 	                String message = in.readLine();
 	                if (message != null) {
-	                    handleIncomingMessage(message); // Use handleIncomingMessage directly
+	                    handleIncomingMessage(message); // gestisce messaggi in arrivo da server
 	                } else {
 	                    System.out.println("Connessione terminata dal server.");
 	                    break;
@@ -158,6 +207,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	}
 	
 	private void handleIncomingMessage(String message) {
+		System.out.println("Pannello\t"+message);
         JsonObject receivedJson = JsonParser.parseString(message).getAsJsonObject();
         String tipo = receivedJson.get("tipo").getAsString();
 
@@ -165,7 +215,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
             case "tipoNavicella":
                 playerType = receivedJson.get("navicella").getAsString();
                 this.clientNavicella = playerType;
-                System.out.println("Tipo di navicella assegnato: " + playerType);
                 break;
             case "posizione":
 	            // Estrai il nome della navicella e le coordinate dal messaggio
@@ -191,6 +240,27 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            }
 	            
 	            break;
+            case "asteroide":
+            	int asteroideX = receivedJson.get("x").getAsInt();
+	            int asteroideY = receivedJson.get("y").getAsInt();
+	            String imagePath = receivedJson.get("imagePath").getAsString();
+	            String name = receivedJson.get("name").getAsString();
+	            double asteroideAngolo = receivedJson.get("angolo").getAsDouble();
+	            double asteroideAngoloRotazione = receivedJson.get("angoloRotazione").getAsDouble();
+	            Asteroide asteroide = new Asteroide(this, name, imagePath);
+	            asteroide.setX(asteroideX);
+	            asteroide.setY(asteroideY);
+	            asteroide.setAngolo(asteroideAngolo);
+	            asteroide.setAngoloRotazione(asteroideAngoloRotazione);
+	            Map<String, Cache> obj = singleton.getObj();
+	            Cache tmp = obj.get(name);
+	            if(tmp==null) {
+	            	singleton.getObj().put(name, asteroide);
+	            }
+	            
+	            //controllaCollisioneNavAsteroid(entry);
+	            //SwingUtilities.invokeLater(() -> asteroidi.add(asteroide));
+            	break;
             default:
                 System.err.println("GameClient: Tipo di messaggio sconosciuto: " + tipo);
                 break;
@@ -376,13 +446,13 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 		Map<String, Cache> tempObjects = new HashMap<>(singleton.getObj());
 	    for (Entry<String, Cache> entry : tempObjects.entrySet()) {
 	        Cache gameObject = entry.getValue();
-//	        if (gameObject instanceof Asteroide) {
-//	        	Asteroide a = (Asteroide) gameObject;
-//	            a.updateMovement();
-//	            // Controlla le collisioni con ogni asteroide qui
-//	            controllaCollisioneNavAsteroid(entry);
-//	            a.draw(g2d);
-//	        }
+	        if (gameObject instanceof Asteroide) {
+	        	Asteroide a = (Asteroide) gameObject;
+	            a.updateMovement();
+	            // Controlla le collisioni con ogni asteroide qui
+	            //controllaCollisioneNavAsteroid(entry);
+	            a.draw(g2d);
+	        }
 	        if (gameObject instanceof Nav) {
 	        	Nav n = (Nav) gameObject;
 	        	n.draw(g2d);
@@ -390,7 +460,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        
 	    }
 	    
-	 // Imposta il colore e il font per il testo del contatore
+	    // Imposta il colore e il font per il testo del contatore
 	    g.setColor(Color.WHITE);
 	    g.setFont(new Font("Arial", Font.BOLD, 14));
 

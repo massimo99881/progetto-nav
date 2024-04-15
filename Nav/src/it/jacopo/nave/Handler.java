@@ -45,6 +45,7 @@ public class Handler implements Runnable {
 
                 switch (tipo) {
 	                case "sparo":
+	                case "asteroide":
                     case "posizione":
                         server.broadcast(receivedText, this.playerType);
                         break;

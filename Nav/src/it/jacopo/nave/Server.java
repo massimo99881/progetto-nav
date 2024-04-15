@@ -1,6 +1,9 @@
 package it.jacopo.nave;
 
 import java.awt.Dimension;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -9,10 +12,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import javax.imageio.ImageIO;
 
 import com.google.gson.JsonObject;
 
@@ -27,9 +33,43 @@ public class Server {
     public Server() throws IOException {
         serverSocket = new ServerSocket(port);
         System.out.println("Server avviato sulla porta " + port);
-        Asteroide.precaricaImmagini();
-        iniziaTimerAggiornamentiProiettili();
-	    
+        
+        precaricaImmagini();
+        
+        
+        
+    }
+    
+    void precaricaImmagini() {
+    	int asteroidNumber = Conf.asteroid_number;
+        // Caricamento e cache delle prime 15 immagini con nomi specifici
+        for (int i = 1; i <= asteroidNumber; i++) {
+            String percorso = Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png";
+            caricaImmagine(percorso);
+        }
+    }
+
+    void caricaImmagine(String path) {
+    	Map<String, Cache> imageCache = Singleton.getInstance().getImageCache();
+        if (!imageCache.containsKey(path)) {
+        	try {
+        		Random rand = new Random();
+                BufferedImage originalImage = ImageIO.read(new File(path));
+                double scaleFactor = !path.contains("asteroide1.png") ? 0.2 + (0.45 - 0.2) * rand.nextDouble() : 0.2;
+                //double scaleFactor = 0.2 + (0.45 - 0.2) * rand.nextDouble();
+                int newWidth = (int) (originalImage.getWidth() * scaleFactor);
+                int newHeight = (int) (originalImage.getHeight() * scaleFactor);
+                Cache ac = new Cache(originalImage.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH));
+                singleton.getImageCache().put(path, ac);
+            } 
+        	catch (IOException e) {
+                e.printStackTrace();
+            }
+        	catch (Exception e) {
+                System.err.println("Errore nel caricamento dell'immagine da: " + path);
+                e.printStackTrace();
+            }
+        }
     }
     
     public void setGameDimensions(String clientID, int larghezza, int altezza) {
@@ -48,6 +88,16 @@ public class Server {
             @Override
             public void run() {
                 inviaAggiornamentiProiettili();
+            }
+        }, 0, 100); 
+    }
+    
+    private void iniziaTimerAggiornamentiAsteroidi() {
+    	Timer timerAggiornamentoAsteroidi = new Timer(true);
+    	timerAggiornamentoAsteroidi.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                inviaAggiornamentiAsteroidi();
             }
         }, 0, 100); 
     }
@@ -79,6 +129,29 @@ public class Server {
                 }
             }
         }
+    }
+    
+    private void inviaAggiornamentiAsteroidi() {
+    	Map<String, Cache> obj = singleton.getObj();
+    	Map<String, Cache> tempObjects = new HashMap<>(obj);
+	    for (Entry<String, Cache> entry : tempObjects.entrySet()) {
+	        Cache gameObject = entry.getValue();
+	        if (gameObject instanceof Asteroide) {
+	        	Asteroide asteroide = (Asteroide) gameObject;
+	        	for (Handler client : clients) {
+                	JsonObject jsonMessage = new JsonObject();
+                    jsonMessage.addProperty("tipo", "asteroide");
+                    jsonMessage.addProperty("name", asteroide.getName());
+                    jsonMessage.addProperty("imagePath", asteroide.getImmaginePath());
+                    jsonMessage.addProperty("x", asteroide.getX());
+                    jsonMessage.addProperty("angoloRotazione", asteroide.getAngoloRotazione());
+                    jsonMessage.addProperty("y", asteroide.getY());
+                    jsonMessage.addProperty("angolo", asteroide.angolo);
+                    System.out.println("GameServer > "+jsonMessage.toString());
+                    client.sendMessage(jsonMessage.toString());
+                }
+	        }
+	    }
     }
     
     public synchronized void broadcast(String message, String excludePlayerType) {
@@ -121,7 +194,33 @@ public class Server {
                 handler.setNavicella(navicella);
                 
                 clients.add(handler);
-                new Thread(handler).start();
+                
+                if(playerCount==2) {
+                	// Inizializza 15 asteroidi con posizioni iniziali visibili
+            	    for (int i = 1; i <= Conf.asteroid_number; i++) { 
+            	    	String nomeAsteroide = "asteroide" + i;
+            	        Asteroide asteroide = new Asteroide(null, nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png");
+            	        asteroide.x = Conf.FRAME_WIDTH; 
+            	        Random rand = new Random();
+            	        int numeroCasuale = rand.nextInt(441) + 10; 
+            	        asteroide.y = numeroCasuale; 
+            	        singleton.getNomiAsteroidi().add(nomeAsteroide);
+            	        singleton.getObj().put(asteroide.name, asteroide);
+            	        
+            	    }
+            	    
+            	    for(Handler h : clients) {
+            	    	new Thread(h).start();
+            	    }
+            	    
+            	    
+            	    iniziaTimerAggiornamentiProiettili();
+                    iniziaTimerAggiornamentiAsteroidi();
+                }
+                else {
+                	System.out.println("In attesa secondo giocatore...");
+                }
+                
             } catch (IOException e) {
                 e.printStackTrace();
             }
