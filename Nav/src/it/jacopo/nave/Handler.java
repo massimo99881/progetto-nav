@@ -45,6 +45,7 @@ public class Handler implements Runnable {
 
                 switch (tipo) {
 	                case "startAsteroidi":
+	                case "generateAsteroids":
 	                case "asteroide":
 	                	server.broadcast(receivedText);
 	                	break;

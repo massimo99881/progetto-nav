@@ -98,7 +98,7 @@ public class Server {
         TimerTask updateTask = new TimerTask() {
             @Override
             public void run() {
-                inviaAggiornamentiAsteroidi();
+            	createAsteroids();
             }
         };
         long delay = startTime - System.currentTimeMillis();
@@ -136,37 +136,18 @@ public class Server {
         }
     }
     
-    private void inviaAggiornamentiAsteroidi() {
+    private void createAsteroids() {
     	int baseIndex = contatoreSerie * Conf.asteroid_number;
 	    for (int i = 1; i <= Conf.asteroid_number; i++) {
-	        String nomeAsteroide = "asteroide" + (baseIndex + i);
-	        Asteroide asteroide = new Asteroide(null, nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png");
-	        asteroide.x = Conf.FRAME_WIDTH; 
-	        asteroide.y = Conf.FRAME_HEIGHT - i * 50;
-	        singleton.getNomiAsteroidi().add(nomeAsteroide);
-	        singleton.getObj().put(nomeAsteroide, asteroide);
-	    }
-	    contatoreSerie++; 
-//    	Map<String, Cache> obj = singleton.getObj();
-//    	Map<String, Cache> tempObjects = new HashMap<>(obj);
-//	    for (Entry<String, Cache> entry : tempObjects.entrySet()) {
-//	        Cache gameObject = entry.getValue();
-//	        if (gameObject instanceof Asteroide) {
-//	        	Asteroide asteroide = (Asteroide) gameObject;
-//	        	for (Handler client : clients) {
-//                	JsonObject jsonMessage = new JsonObject();
-//                    jsonMessage.addProperty("tipo", "asteroide");
-//                    jsonMessage.addProperty("name", asteroide.getName());
-//                    jsonMessage.addProperty("imagePath", asteroide.getImmaginePath());
-//                    jsonMessage.addProperty("x", asteroide.getX());
-//                    jsonMessage.addProperty("angoloRotazione", asteroide.getAngoloRotazione());
-//                    jsonMessage.addProperty("y", asteroide.getY());
-//                    jsonMessage.addProperty("angolo", asteroide.angolo);
-//                    System.out.println("GameServer > "+jsonMessage.toString());
-//                    client.sendMessage(jsonMessage.toString());
-//                }
-//	        }
-//	    }
+            String nomeAsteroide = "asteroide" + (baseIndex + i);
+            Asteroide asteroide = new Asteroide(null, nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png");
+            singleton.getObj().put(nomeAsteroide, asteroide);
+            singleton.getNomiAsteroidi().add(nomeAsteroide);
+        }
+	    JsonObject jsonMessage = new JsonObject();
+        jsonMessage.addProperty("tipo", "generateAsteroids");
+        jsonMessage.addProperty("contatoreSerie", ++contatoreSerie);
+        broadcast(jsonMessage.toString());
     }
     
     public synchronized void broadcast(String message, String excludePlayerType) {
@@ -236,17 +217,7 @@ public class Server {
         }
     }
 
-    
-    private void scheduleAsteroidUpdates(long startTime) {
-        TimerTask task = new TimerTask() {
-            public void run() {
-                inviaAggiornamentiAsteroidi();
-            }
-        };
-        new Timer(true).scheduleAtFixedRate(task, new Date(startTime), 10000); // Run every 10000 ms (10 seconds) after the initial delay
-    }
-
-    
+        
     public static void main(String[] args) throws IOException {
         Server server = new Server();
         server.start();

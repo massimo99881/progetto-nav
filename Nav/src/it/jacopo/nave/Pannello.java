@@ -108,7 +108,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        singleton.getNomiAsteroidi().add(nomeAsteroide);
 	        singleton.getObj().put(nomeAsteroide, asteroide);
 	    }
-	    contatoreSerie++;  
+	    //contatoreSerie++;  
 	}
 	
 	public Pannello() throws IOException {
@@ -233,6 +233,9 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
         String tipo = receivedJson.get("tipo").getAsString();
 
         switch (tipo) {
+        	case "generateAsteroids":
+        		contatoreSerie = receivedJson.get("contatoreSerie").getAsInt();
+        		break;
             case "tipoNavicella":
                 playerType = receivedJson.get("navicella").getAsString();
                 this.clientNavicella = playerType;
@@ -338,32 +341,32 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	
 	@Override
 	public void componentResized(ComponentEvent e) {
-		Map<String, Cache> obj = singleton.getObj();
-	    if (this.getWidth() > 0 && this.larghezzaPrecedente > 0) { // Assicurati che entrambe le larghezze siano valide
-	    	// Aggiorna la posizione delle navicelle
-	        for (Entry<String, Cache> entry : obj.entrySet()) {
-	            Cache gameObject = entry.getValue();
-	            if (gameObject instanceof Nav) {
-	            	Nav n = (Nav) gameObject;
-	                double proporzione = n.x / (double) this.larghezzaPrecedente;
-	                n.x = (int) (proporzione * this.getWidth());
-	            }
-	        }
-
-	        // Aggiorna la posizione degli asteroidi
-	        for (String nomeAsteroide : singleton.getNomiAsteroidi()) {
-	            Asteroide asteroide = (Asteroide)obj.get(nomeAsteroide);
-	            if (asteroide != null) {
-	                double proporzione = asteroide.x / (double) this.larghezzaPrecedente;
-	                asteroide.x = (int) (proporzione * this.getWidth());
-	            }
-	        }
-	    }
-
-	    // Aggiorna 'larghezzaPrecedente' con la nuova larghezza dopo il ridimensionamento
-	    this.larghezzaPrecedente = this.getWidth();
-	    
-	    sendGameDimensionsAfterRender();
+//		Map<String, Cache> obj = singleton.getObj();
+//	    if (this.getWidth() > 0 && this.larghezzaPrecedente > 0) { // Assicurati che entrambe le larghezze siano valide
+//	    	// Aggiorna la posizione delle navicelle
+//	        for (Entry<String, Cache> entry : obj.entrySet()) {
+//	            Cache gameObject = entry.getValue();
+//	            if (gameObject instanceof Nav) {
+//	            	Nav n = (Nav) gameObject;
+//	                double proporzione = n.x / (double) this.larghezzaPrecedente;
+//	                n.x = (int) (proporzione * this.getWidth());
+//	            }
+//	        }
+//
+//	        // Aggiorna la posizione degli asteroidi
+//	        for (String nomeAsteroide : singleton.getNomiAsteroidi()) {
+//	            Asteroide asteroide = (Asteroide)obj.get(nomeAsteroide);
+//	            if (asteroide != null) {
+//	                double proporzione = asteroide.x / (double) this.larghezzaPrecedente;
+//	                asteroide.x = (int) (proporzione * this.getWidth());
+//	            }
+//	        }
+//	    }
+//
+//	    // Aggiorna 'larghezzaPrecedente' con la nuova larghezza dopo il ridimensionamento
+//	    this.larghezzaPrecedente = this.getWidth();
+//	    
+//	    sendGameDimensionsAfterRender();
 	}
 
 	private void sendGameDimensionsAfterRender() {
