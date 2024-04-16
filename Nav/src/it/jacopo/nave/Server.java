@@ -5,6 +5,7 @@ import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -18,7 +19,8 @@ import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
-
+import org.apache.commons.net.ntp.NTPUDPClient;
+import org.apache.commons.net.ntp.TimeInfo;
 import javax.imageio.ImageIO;
 
 import com.google.gson.JsonObject;
@@ -31,8 +33,10 @@ public class Server {
     private final Map<String, Dimension> gameDimensions = new HashMap<>();
     private Singleton singleton = Singleton.getInstance();
     private int contatoreSerie = 0;
+    private long ntpTime;
 
     public Server() throws IOException {
+    	ntpTime = getNtpTime();
         serverSocket = new ServerSocket(port);
         System.out.println("Server avviato sulla porta " + port);
         
@@ -41,6 +45,30 @@ public class Server {
         
         
     }
+    
+    private long getNtpTime() throws IOException {
+        String timeServer = "pool.ntp.org";
+        NTPUDPClient client = new NTPUDPClient();
+        client.open();
+        try {
+            InetAddress address = InetAddress.getByName(timeServer);
+            TimeInfo timeInfo = client.getTime(address);
+            return timeInfo.getMessage().getTransmitTimeStamp().getTime();
+        } finally {
+            client.close();
+        }
+    }
+    
+    public void scheduleAsteroidCreation() throws IOException {
+    	ntpTime += 1000; // 1 secondi nel futuro
+        int seed = new Random().nextInt(); // Genera un seed casuale
+        JsonObject jsonMessage = new JsonObject();
+        jsonMessage.addProperty("tipo", "startAsteroidi");
+        jsonMessage.addProperty("ntpTime", ntpTime);
+        jsonMessage.addProperty("seed", seed);
+        broadcast(jsonMessage.toString());
+    }
+
     
     void precaricaImmagini() {
     	int asteroidNumber = Conf.asteroid_number;
@@ -93,20 +121,6 @@ public class Server {
         }, 0, 100); 
     }
     
-    private void iniziaTimerAggiornamentiAsteroidi(long startTime) {
-        Timer timer = new Timer(true); // Use a daemon thread
-        TimerTask updateTask = new TimerTask() {
-            @Override
-            public void run() {
-            	createAsteroids();
-            }
-        };
-        long delay = startTime - System.currentTimeMillis();
-        if (delay < 0) delay = 0; // Prevent negative delay
-        timer.scheduleAtFixedRate(updateTask, delay, 100); // Start after 'delay' ms and repeat every 100 ms
-    }
-
-
     private void inviaAggiornamentiProiettili() {
     	List<Proiettile> proiettiliAttivi = singleton.getActiveProiettili();
     	Iterator<Proiettile> iterator = proiettiliAttivi.iterator();
@@ -134,20 +148,6 @@ public class Server {
                 }
             }
         }
-    }
-    
-    private void createAsteroids() {
-    	int baseIndex = contatoreSerie * Conf.asteroid_number;
-	    for (int i = 1; i <= Conf.asteroid_number; i++) {
-            String nomeAsteroide = "asteroide" + (baseIndex + i);
-            Asteroide asteroide = new Asteroide(null, nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png");
-            singleton.getObj().put(nomeAsteroide, asteroide);
-            singleton.getNomiAsteroidi().add(nomeAsteroide);
-        }
-	    JsonObject jsonMessage = new JsonObject();
-        jsonMessage.addProperty("tipo", "generateAsteroids");
-        jsonMessage.addProperty("contatoreSerie", ++contatoreSerie);
-        broadcast(jsonMessage.toString());
     }
     
     public synchronized void broadcast(String message, String excludePlayerType) {
@@ -193,11 +193,7 @@ public class Server {
                 
                 if(playerCount==2) {
                 	
-                	long startTime = System.currentTimeMillis() + 15000; // 15 secondi nel futuro
-                    JsonObject jsonMessage = new JsonObject();
-                    jsonMessage.addProperty("tipo", "startAsteroidi");
-                    jsonMessage.addProperty("startTime", startTime);
-                    broadcast(jsonMessage.toString());
+                	scheduleAsteroidCreation();
                 	
             	    for(Handler h : clients) {
             	    	new Thread(h).start();
@@ -205,7 +201,6 @@ public class Server {
             	    
             	    
             	    iniziaTimerAggiornamentiProiettili();
-                    iniziaTimerAggiornamentiAsteroidi(startTime);
                 }
                 else {
                 	System.out.println("In attesa secondo giocatore...");

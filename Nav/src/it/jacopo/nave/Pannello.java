@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.TimerTask; // Util TimerTask for scheduling tasks
 
 import javax.imageio.ImageIO;
@@ -78,38 +79,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	private Clip clipAudio;
 	private int contatoreSerie = 0;
 	
-	private void scheduleAsteroidTimer(long startTime) {
-	    // Calculate delay to start the timer
-	    long delay = startTime - System.currentTimeMillis();
-	    if (delay < 0) delay = 0; // Ensure the delay is non-negative
-
-	    // Create a new instance of java.util.Timer
-	    Timer timer = new Timer();
-	    timer.schedule(new TimerTask() {
-	        @Override
-	        public void run() {
-	            // Ensure updates to the UI are made on the Swing event dispatch thread
-	            SwingUtilities.invokeLater(() -> {
-	                initializeAsteroids();
-	            });
-	        }
-	    }, delay, 10000); // Run every 10000 ms (10 seconds) after the initial delay
-	}
-
 	
-	
-	private void initializeAsteroids() {
-	    int baseIndex = contatoreSerie * Conf.asteroid_number;
-	    for (int i = 1; i <= Conf.asteroid_number; i++) {
-	        String nomeAsteroide = "asteroide" + (baseIndex + i);
-	        Asteroide asteroide = new Asteroide(this, nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png");
-	        asteroide.x = Conf.FRAME_WIDTH; 
-	        asteroide.y = Conf.FRAME_HEIGHT - i * 50;
-	        singleton.getNomiAsteroidi().add(nomeAsteroide);
-	        singleton.getObj().put(nomeAsteroide, asteroide);
-	    }
-	    //contatoreSerie++;  
-	}
 	
 	public Pannello() throws IOException {
 		this.singleton = Singleton.getInstance();
@@ -132,9 +102,9 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
         // Aggiungi 'this' come ComponentListener del pannello
         this.addComponentListener(this);
         
-        caricaAudio(); // Carica l'audio
-        clipAudio.start(); // Avvia l'audio
-        clipAudio.loop(Clip.LOOP_CONTINUOUSLY); // Loop continuo
+//        caricaAudio();
+//        clipAudio.start(); 
+//        clipAudio.loop(Clip.LOOP_CONTINUOUSLY); 
 	}
 	
 	void precaricaImmagini() {
@@ -225,7 +195,33 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    }, "Client-Receiver").start();
 	}
 	
+	private void scheduleAsteroidTimer(long delay, int seed) {
+	    if (delay < 0) delay = 0;
+	    Timer timer = new Timer();
+	    timer.schedule(new TimerTask() {
+	        @Override
+	        public void run() {
+	            SwingUtilities.invokeLater(() -> {
+	                initializeAsteroids(seed);
+	            });
+	        }
+	    }, delay);
+	}
 	
+	private void initializeAsteroids(int seed) {
+	    Random rand = new Random(seed);
+	    int baseIndex = contatoreSerie * Conf.asteroid_number;
+	    for (int i = 1; i <= Conf.asteroid_number; i++) {
+	        int posY = rand.nextInt(Conf.FRAME_HEIGHT); // Posizione Y casuale basata sulla seed
+	        String nomeAsteroide = "asteroide" + (baseIndex + i);
+	        Asteroide asteroide = new Asteroide(this, nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png");
+	        asteroide.x = Conf.FRAME_WIDTH;
+	        asteroide.y = posY;
+	        singleton.getNomiAsteroidi().add(nomeAsteroide);
+	        singleton.getObj().put(nomeAsteroide, asteroide);
+	    }
+	    contatoreSerie++;
+	}
 	
 	private void handleIncomingMessage(String message) {
 		System.out.println("Pannello\t"+message);
@@ -233,16 +229,14 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
         String tipo = receivedJson.get("tipo").getAsString();
 
         switch (tipo) {
-        	case "generateAsteroids":
-        		contatoreSerie = receivedJson.get("contatoreSerie").getAsInt();
-        		break;
             case "tipoNavicella":
                 playerType = receivedJson.get("navicella").getAsString();
                 this.clientNavicella = playerType;
                 break;
             case "startAsteroidi":
-            	long startTime = receivedJson.get("startTime").getAsLong();
-                scheduleAsteroidTimer(startTime);
+            	long ntpTime = receivedJson.get("ntpTime").getAsLong();
+                int seed = receivedJson.get("seed").getAsInt();
+                scheduleAsteroidTimer(ntpTime - System.currentTimeMillis(), seed);
             	break;
             case "posizione":
 	            // Estrai il nome della navicella e le coordinate dal messaggio
@@ -269,26 +263,31 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            
 	            break;
             case "asteroide":
-//            	int asteroideX = receivedJson.get("x").getAsInt();
-//	            int asteroideY = receivedJson.get("y").getAsInt();
-//	            String imagePath = receivedJson.get("imagePath").getAsString();
-//	            String name = receivedJson.get("name").getAsString();
-//	            double asteroideAngolo = receivedJson.get("angolo").getAsDouble();
-//	            double asteroideAngoloRotazione = receivedJson.get("angoloRotazione").getAsDouble();
-//	            Asteroide asteroide = new Asteroide(this, name, imagePath);
-//	            asteroide.setX(asteroideX);
-//	            asteroide.setY(asteroideY);
-//	            asteroide.setAngolo(asteroideAngolo);
-//	            asteroide.setAngoloRotazione(asteroideAngoloRotazione);
-//	            Map<String, Cache> obj = singleton.getObj();
-//	            Cache tmp = obj.get(name);
-//	            if(tmp==null) {
-//	            	singleton.getObj().put(name, asteroide);
-//	            }
-	            
+//                Asteroide asteroide = new Asteroide(this, receivedJson.get("nome").getAsString(), receivedJson.get("imagePath").getAsString());
+//                asteroide.x = receivedJson.get("x").getAsInt();
+//                asteroide.y = receivedJson.get("y").getAsInt();
+//                singleton.getObj().put(asteroide.getNome(), asteroide);
+//                break;
+            	int asteroideX = receivedJson.get("x").getAsInt();
+	            int asteroideY = receivedJson.get("y").getAsInt();
+	            String imagePath = receivedJson.get("imagePath").getAsString();
+	            String name = receivedJson.get("nome").getAsString();
+	            double asteroideAngolo = receivedJson.get("angolo").getAsDouble();
+	            double asteroideAngoloRotazione = receivedJson.get("angoloRotazione").getAsDouble();
+	            Asteroide asteroide = new Asteroide(this, name, imagePath);
+	            asteroide.setX(asteroideX);
+	            asteroide.setY(asteroideY);
+	            asteroide.setAngolo(asteroideAngolo);
+	            asteroide.setAngoloRotazione(asteroideAngoloRotazione);
+	            Map<String, Cache> obj = singleton.getObj();
+	            Cache tmp = obj.get(name);
+	            if(tmp==null) {
+	            	singleton.getObj().put(name, asteroide);
+	            	singleton.getNomiAsteroidi().add(name);
+	            }
+	            break;
 	            //controllaCollisioneNavAsteroid(entry);
 	            //SwingUtilities.invokeLater(() -> asteroidi.add(asteroide));
-            	break;
             default:
                 System.err.println("GameClient: Tipo di messaggio sconosciuto: " + tipo);
                 break;
@@ -369,18 +368,18 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 //	    sendGameDimensionsAfterRender();
 	}
 
-	private void sendGameDimensionsAfterRender() {
-	    // Verifica se il pannello è stato effettivamente visualizzato con dimensioni valide
-	    if (this.getWidth() > 0 && this.getHeight() > 0) {
-	        // Invia le dimensioni al server
-	        sendGameDimensions(this.getWidth(), this.getHeight());
-	    } else {
-	        // Se le dimensioni non sono valide, potresti voler riprovare dopo un breve ritardo
-	        SwingUtilities.invokeLater(() -> {
-	            sendGameDimensionsAfterRender();
-	        });
-	    }
-	}
+//	private void sendGameDimensionsAfterRender() {
+//	    // Verifica se il pannello è stato effettivamente visualizzato con dimensioni valide
+//	    if (this.getWidth() > 0 && this.getHeight() > 0) {
+//	        // Invia le dimensioni al server
+//	        sendGameDimensions(this.getWidth(), this.getHeight());
+//	    } else {
+//	        // Se le dimensioni non sono valide, potresti voler riprovare dopo un breve ritardo
+//	        SwingUtilities.invokeLater(() -> {
+//	            sendGameDimensionsAfterRender();
+//	        });
+//	    }
+//	}
 	
 	@Override
 	public void componentMoved(ComponentEvent e) {
@@ -388,7 +387,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 
 	@Override
 	public void componentShown(ComponentEvent e) {
-		sendGameDimensionsAfterRender();
+//		sendGameDimensionsAfterRender();
 	}
 
 	@Override

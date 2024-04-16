@@ -9,5 +9,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="C:/le_tue_lezioni/jacopo/progetto-jacopo/Nav/lib/gson-2.10.1.jar"/>
+	<classpathentry kind="lib" path="lib/commons-net-3.10.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
