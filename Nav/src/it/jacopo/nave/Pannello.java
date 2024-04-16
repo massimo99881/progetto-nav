@@ -38,6 +38,7 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
+import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import java.util.Timer;
@@ -78,10 +79,11 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	private Singleton singleton ;
 	private Clip clipAudio;
 	private int contatoreSerie = 0;
+	private JFrame frame;
 	
 	
-	
-	public Pannello() throws IOException {
+	public Pannello(JFrame frame) throws IOException {
+		this.frame = frame;
 		this.singleton = Singleton.getInstance();
 		
 		precaricaImmagini();
@@ -112,17 +114,16 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
         // Caricamento e cache delle prime 15 immagini con nomi specifici
         for (int i = 1; i <= asteroidNumber; i++) {
             String percorso = Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png";
-            caricaImmagine(percorso);
+            caricaImmagine(percorso, asteroidNumber);
         }
     }
 
-    void caricaImmagine(String path) {
+    void caricaImmagine(String path, int asteroidNumber) {
     	Map<String, Cache> imageCache = Singleton.getInstance().getImageCache();
         if (!imageCache.containsKey(path)) {
         	try {
                 BufferedImage originalImage = ImageIO.read(new File(path));
-                double scaleFactor = 0.2;
-                //double scaleFactor = 0.2 + (0.45 - 0.2) * rand.nextDouble();
+                double scaleFactor = !path.contains("asteroide1.png") ? 0.2 + asteroidNumber*2/100 : 0.2;
                 int newWidth = (int) (originalImage.getWidth() * scaleFactor);
                 int newHeight = (int) (originalImage.getHeight() * scaleFactor);
                 Cache ac = new Cache(originalImage.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH));
@@ -232,6 +233,9 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
             case "tipoNavicella":
                 playerType = receivedJson.get("navicella").getAsString();
                 this.clientNavicella = playerType;
+                if (frame != null) {
+                    frame.setTitle("Navicella: " + playerType);
+                }
                 break;
             case "startAsteroidi":
             	long ntpTime = receivedJson.get("ntpTime").getAsLong();

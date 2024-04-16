@@ -129,7 +129,11 @@ java -jar space-defenders.jar
 - [OK] motore non si spegne quando la nav si ferma e il cursore  è lontano
 - [OK] fix post-reset game per ricalcolo ascissa asteroidi quando resize panel
 - [OK] fix post hai vinto
-- multi-giocatore
+- [WIP] multi-giocatore
+- [WIP] bloccare movimento quando si sposta/ridimensiona la win
+- [WIP] prima ondata su client 2 leggermente in ritardo
+- [WIP] aggiungere tutte le altre logiche (collisione asteroidi con nav e proiettili)
+- [TODO] verificare rendering proiettili 
 
 ## Contribuire
 Siamo aperti a contributi! Se vuoi migliorare il gioco o aggiungere nuove funzionalità, sentiti libero di aprire una pull request. Per contribuire al progetto, segui questi passaggi:
