@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -28,7 +29,8 @@ public class Server {
     private final List<Handler> clients = new CopyOnWriteArrayList<>();
     private int playerCount = 0;
     private final Map<String, Dimension> gameDimensions = new HashMap<>();
-    private Singleton singleton = Singleton.getInstance(); 
+    private Singleton singleton = Singleton.getInstance();
+    private int contatoreSerie = 0;
 
     public Server() throws IOException {
         serverSocket = new ServerSocket(port);
@@ -91,15 +93,19 @@ public class Server {
         }, 0, 100); 
     }
     
-    private void iniziaTimerAggiornamentiAsteroidi() {
-    	Timer timerAggiornamentoAsteroidi = new Timer(true);
-    	timerAggiornamentoAsteroidi.scheduleAtFixedRate(new TimerTask() {
+    private void iniziaTimerAggiornamentiAsteroidi(long startTime) {
+        Timer timer = new Timer(true); // Use a daemon thread
+        TimerTask updateTask = new TimerTask() {
             @Override
             public void run() {
                 inviaAggiornamentiAsteroidi();
             }
-        }, 0, 100); 
+        };
+        long delay = startTime - System.currentTimeMillis();
+        if (delay < 0) delay = 0; // Prevent negative delay
+        timer.scheduleAtFixedRate(updateTask, delay, 100); // Start after 'delay' ms and repeat every 100 ms
     }
+
 
     private void inviaAggiornamentiProiettili() {
     	List<Proiettile> proiettiliAttivi = singleton.getActiveProiettili();
@@ -131,26 +137,36 @@ public class Server {
     }
     
     private void inviaAggiornamentiAsteroidi() {
-    	Map<String, Cache> obj = singleton.getObj();
-    	Map<String, Cache> tempObjects = new HashMap<>(obj);
-	    for (Entry<String, Cache> entry : tempObjects.entrySet()) {
-	        Cache gameObject = entry.getValue();
-	        if (gameObject instanceof Asteroide) {
-	        	Asteroide asteroide = (Asteroide) gameObject;
-	        	for (Handler client : clients) {
-                	JsonObject jsonMessage = new JsonObject();
-                    jsonMessage.addProperty("tipo", "asteroide");
-                    jsonMessage.addProperty("name", asteroide.getName());
-                    jsonMessage.addProperty("imagePath", asteroide.getImmaginePath());
-                    jsonMessage.addProperty("x", asteroide.getX());
-                    jsonMessage.addProperty("angoloRotazione", asteroide.getAngoloRotazione());
-                    jsonMessage.addProperty("y", asteroide.getY());
-                    jsonMessage.addProperty("angolo", asteroide.angolo);
-                    System.out.println("GameServer > "+jsonMessage.toString());
-                    client.sendMessage(jsonMessage.toString());
-                }
-	        }
+    	int baseIndex = contatoreSerie * Conf.asteroid_number;
+	    for (int i = 1; i <= Conf.asteroid_number; i++) {
+	        String nomeAsteroide = "asteroide" + (baseIndex + i);
+	        Asteroide asteroide = new Asteroide(null, nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png");
+	        asteroide.x = Conf.FRAME_WIDTH; 
+	        asteroide.y = Conf.FRAME_HEIGHT - i * 50;
+	        singleton.getNomiAsteroidi().add(nomeAsteroide);
+	        singleton.getObj().put(nomeAsteroide, asteroide);
 	    }
+	    contatoreSerie++; 
+//    	Map<String, Cache> obj = singleton.getObj();
+//    	Map<String, Cache> tempObjects = new HashMap<>(obj);
+//	    for (Entry<String, Cache> entry : tempObjects.entrySet()) {
+//	        Cache gameObject = entry.getValue();
+//	        if (gameObject instanceof Asteroide) {
+//	        	Asteroide asteroide = (Asteroide) gameObject;
+//	        	for (Handler client : clients) {
+//                	JsonObject jsonMessage = new JsonObject();
+//                    jsonMessage.addProperty("tipo", "asteroide");
+//                    jsonMessage.addProperty("name", asteroide.getName());
+//                    jsonMessage.addProperty("imagePath", asteroide.getImmaginePath());
+//                    jsonMessage.addProperty("x", asteroide.getX());
+//                    jsonMessage.addProperty("angoloRotazione", asteroide.getAngoloRotazione());
+//                    jsonMessage.addProperty("y", asteroide.getY());
+//                    jsonMessage.addProperty("angolo", asteroide.angolo);
+//                    System.out.println("GameServer > "+jsonMessage.toString());
+//                    client.sendMessage(jsonMessage.toString());
+//                }
+//	        }
+//	    }
     }
     
     public synchronized void broadcast(String message, String excludePlayerType) {
@@ -195,24 +211,20 @@ public class Server {
                 clients.add(handler);
                 
                 if(playerCount==2) {
-                	// Inizializza 15 asteroidi con posizioni iniziali visibili
-            	    for (int i = 1; i <= Conf.asteroid_number; i++) { 
-            	    	String nomeAsteroide = "asteroide" + i;
-            	        Asteroide asteroide = new Asteroide(null, nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png");
-            	        asteroide.x = Conf.FRAME_WIDTH; 
-            	        asteroide.y = i % Conf.FRAME_WIDTH * 100; 
-            	        singleton.getNomiAsteroidi().add(nomeAsteroide);
-            	        singleton.getObj().put(asteroide.name, asteroide);
-            	        
-            	    }
-            	    
+                	
+                	long startTime = System.currentTimeMillis() + 15000; // 15 secondi nel futuro
+                    JsonObject jsonMessage = new JsonObject();
+                    jsonMessage.addProperty("tipo", "startAsteroidi");
+                    jsonMessage.addProperty("startTime", startTime);
+                    broadcast(jsonMessage.toString());
+                	
             	    for(Handler h : clients) {
             	    	new Thread(h).start();
             	    }
             	    
             	    
             	    iniziaTimerAggiornamentiProiettili();
-                    iniziaTimerAggiornamentiAsteroidi();
+                    iniziaTimerAggiornamentiAsteroidi(startTime);
                 }
                 else {
                 	System.out.println("In attesa secondo giocatore...");
@@ -224,6 +236,17 @@ public class Server {
         }
     }
 
+    
+    private void scheduleAsteroidUpdates(long startTime) {
+        TimerTask task = new TimerTask() {
+            public void run() {
+                inviaAggiornamentiAsteroidi();
+            }
+        };
+        new Timer(true).scheduleAtFixedRate(task, new Date(startTime), 10000); // Run every 10000 ms (10 seconds) after the initial delay
+    }
+
+    
     public static void main(String[] args) throws IOException {
         Server server = new Server();
         server.start();

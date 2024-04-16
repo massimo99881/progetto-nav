@@ -44,8 +44,11 @@ public class Handler implements Runnable {
                 String tipo = receivedJson.get("tipo").getAsString();
 
                 switch (tipo) {
-	                case "sparo":
+	                case "startAsteroidi":
 	                case "asteroide":
+	                	server.broadcast(receivedText);
+	                	break;
+	                case "sparo":
                     case "posizione":
                         server.broadcast(receivedText, this.playerType);
                         break;

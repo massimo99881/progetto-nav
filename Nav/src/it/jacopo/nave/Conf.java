@@ -11,7 +11,7 @@ public class Conf {
 	final static String _RESOURCES_AUDIO_PATH = "resources/audio/";
 	final static String SFONDO_JPG = "sfondo.jpg";
 	//final static int asteroid_number = 15;
-	final static int asteroid_number = 3; //TEST 
+	final static int asteroid_number = 15; //TEST 
 	final static int _FPSms = 16;
 	final static int MAX_AGGIUNTE = 10; //NUMERO ASTEROIDI CHE VENGONO AGGIUNTI OGNI LIVELLO
 	final static int Level_timer = 25000; // 25 SEC

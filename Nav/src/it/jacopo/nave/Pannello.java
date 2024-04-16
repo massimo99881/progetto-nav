@@ -5,7 +5,6 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
-import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -30,8 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Consumer;
-import java.util.Random;
+import java.util.TimerTask; // Util TimerTask for scheduling tasks
 
 import javax.imageio.ImageIO;
 import javax.sound.sampled.AudioInputStream;
@@ -39,10 +37,10 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
-import javax.swing.Timer;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -65,12 +63,12 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	private boolean isInCollision = false;
 	boolean gameStopped = false;
 	ArrayList<Proiettile> proiettili = new ArrayList<>();
-    private Timer gameTimer;
+    private javax.swing.Timer gameTimer;
 	Area area1;
 	int cx = 100, cy = 100;//thread update per drift astronave
 	private Image sfondo;
 	private boolean staSparando = false;
-	private Timer timerSparo;
+	private javax.swing.Timer timerSparo;
 	private long lastShootTime = 0;
 	private final long SHOOT_INTERVAL = 100; // Intervallo tra gli spari in millisecondi
 	private int asteroidiDistrutti = 0;
@@ -78,22 +76,46 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	private String clientNavicella = "";
 	private Singleton singleton ;
 	private Clip clipAudio;
+	private int contatoreSerie = 0;
+	
+	private void scheduleAsteroidTimer(long startTime) {
+	    // Calculate delay to start the timer
+	    long delay = startTime - System.currentTimeMillis();
+	    if (delay < 0) delay = 0; // Ensure the delay is non-negative
+
+	    // Create a new instance of java.util.Timer
+	    Timer timer = new Timer();
+	    timer.schedule(new TimerTask() {
+	        @Override
+	        public void run() {
+	            // Ensure updates to the UI are made on the Swing event dispatch thread
+	            SwingUtilities.invokeLater(() -> {
+	                initializeAsteroids();
+	            });
+	        }
+	    }, delay, 10000); // Run every 10000 ms (10 seconds) after the initial delay
+	}
+
+	
+	
+	private void initializeAsteroids() {
+	    int baseIndex = contatoreSerie * Conf.asteroid_number;
+	    for (int i = 1; i <= Conf.asteroid_number; i++) {
+	        String nomeAsteroide = "asteroide" + (baseIndex + i);
+	        Asteroide asteroide = new Asteroide(this, nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png");
+	        asteroide.x = Conf.FRAME_WIDTH; 
+	        asteroide.y = Conf.FRAME_HEIGHT - i * 50;
+	        singleton.getNomiAsteroidi().add(nomeAsteroide);
+	        singleton.getObj().put(nomeAsteroide, asteroide);
+	    }
+	    contatoreSerie++;  
+	}
 	
 	public Pannello() throws IOException {
 		this.singleton = Singleton.getInstance();
 		
 		precaricaImmagini();
-        
-        // Inizializza 15 asteroidi con posizioni iniziali visibili
-	    for (int i = 1; i <= Conf.asteroid_number; i++) { 
-	    	String nomeAsteroide = "asteroide" + i;
-	        Asteroide asteroide = new Asteroide(this, nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png");
-	        asteroide.x = Conf.FRAME_WIDTH; 
-	        asteroide.y = i % Conf.FRAME_WIDTH * 100; 
-	        singleton.getNomiAsteroidi().add(nomeAsteroide);
-	        singleton.getObj().put(asteroide.name, asteroide);
-	        
-	    }
+		
 		
 		setupNetworking();
 		setupNavicelle();
@@ -203,6 +225,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    }, "Client-Receiver").start();
 	}
 	
+	
+	
 	private void handleIncomingMessage(String message) {
 		System.out.println("Pannello\t"+message);
         JsonObject receivedJson = JsonParser.parseString(message).getAsJsonObject();
@@ -213,6 +237,10 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
                 playerType = receivedJson.get("navicella").getAsString();
                 this.clientNavicella = playerType;
                 break;
+            case "startAsteroidi":
+            	long startTime = receivedJson.get("startTime").getAsLong();
+                scheduleAsteroidTimer(startTime);
+            	break;
             case "posizione":
 	            // Estrai il nome della navicella e le coordinate dal messaggio
 	            String nomeNavicella = receivedJson.get("nome").getAsString();
@@ -238,22 +266,22 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            
 	            break;
             case "asteroide":
-            	int asteroideX = receivedJson.get("x").getAsInt();
-	            int asteroideY = receivedJson.get("y").getAsInt();
-	            String imagePath = receivedJson.get("imagePath").getAsString();
-	            String name = receivedJson.get("name").getAsString();
-	            double asteroideAngolo = receivedJson.get("angolo").getAsDouble();
-	            double asteroideAngoloRotazione = receivedJson.get("angoloRotazione").getAsDouble();
-	            Asteroide asteroide = new Asteroide(this, name, imagePath);
-	            asteroide.setX(asteroideX);
-	            asteroide.setY(asteroideY);
-	            asteroide.setAngolo(asteroideAngolo);
-	            asteroide.setAngoloRotazione(asteroideAngoloRotazione);
-	            Map<String, Cache> obj = singleton.getObj();
-	            Cache tmp = obj.get(name);
-	            if(tmp==null) {
-	            	singleton.getObj().put(name, asteroide);
-	            }
+//            	int asteroideX = receivedJson.get("x").getAsInt();
+//	            int asteroideY = receivedJson.get("y").getAsInt();
+//	            String imagePath = receivedJson.get("imagePath").getAsString();
+//	            String name = receivedJson.get("name").getAsString();
+//	            double asteroideAngolo = receivedJson.get("angolo").getAsDouble();
+//	            double asteroideAngoloRotazione = receivedJson.get("angoloRotazione").getAsDouble();
+//	            Asteroide asteroide = new Asteroide(this, name, imagePath);
+//	            asteroide.setX(asteroideX);
+//	            asteroide.setY(asteroideY);
+//	            asteroide.setAngolo(asteroideAngolo);
+//	            asteroide.setAngoloRotazione(asteroideAngoloRotazione);
+//	            Map<String, Cache> obj = singleton.getObj();
+//	            Cache tmp = obj.get(name);
+//	            if(tmp==null) {
+//	            	singleton.getObj().put(name, asteroide);
+//	            }
 	            
 	            //controllaCollisioneNavAsteroid(entry);
 	            //SwingUtilities.invokeLater(() -> asteroidi.add(asteroide));
@@ -525,7 +553,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	}
 
 	private void setupTimerSparo() {
-		timerSparo = new Timer(100, new ActionListener() { // Imposta un intervallo appropriato per la frequenza di sparo
+		timerSparo = new javax.swing.Timer(100, new ActionListener() { // Imposta un intervallo appropriato per la frequenza di sparo
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (staSparando) {
@@ -538,7 +566,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 
 	private void setupTimerGame() {
 		// Inizializza e avvia il Timer
-        gameTimer = new Timer(Conf._FPSms, new ActionListener() {
+        gameTimer = new javax.swing.Timer(Conf._FPSms, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 aggiornaGioco(); // Aggiorna lo stato del gioco
