@@ -195,32 +195,32 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    }, "Client-Receiver").start();
 	}
 	
-	private void scheduleAsteroidTimer(long delay, int seed) {
+	private void scheduleAsteroidTimer(long delay, int seed, int ondata) {
 	    if (delay < 0) delay = 0;
 	    Timer timer = new Timer();
 	    timer.schedule(new TimerTask() {
 	        @Override
 	        public void run() {
 	            SwingUtilities.invokeLater(() -> {
-	                initializeAsteroids(seed);
+	                initializeAsteroids(seed, ondata);
 	            });
 	        }
 	    }, delay);
 	}
 	
-	private void initializeAsteroids(int seed) {
+	private void initializeAsteroids(int seed, int ondata) {
 	    Random rand = new Random(seed);
-	    int baseIndex = contatoreSerie * Conf.asteroid_number;
+	    int baseIndex = ondata * 100;  // Incrementa l'indice base per ogni ondata
 	    for (int i = 1; i <= Conf.asteroid_number; i++) {
-	        int posY = rand.nextInt(Conf.FRAME_HEIGHT); // Posizione Y casuale basata sulla seed
-	        String nomeAsteroide = "asteroide" + (baseIndex + i);
-	        Asteroide asteroide = new Asteroide(this, nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png");
+	    	int posY = rand.nextInt(Conf.FRAME_HEIGHT);  // Posizione Y casuale
+	        int asteroidIndex = Singleton.getNextAsteroidIndex();  // Ottieni l'indice univoco progressivo
+	        String nomeAsteroide = "asteroide" + asteroidIndex;  // Crea un nome univoco per l'asteroide
+	        Asteroide asteroide = new Asteroide(this, nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + ((i % 15) + 1) + ".png");
 	        asteroide.x = Conf.FRAME_WIDTH;
 	        asteroide.y = posY;
 	        singleton.getNomiAsteroidi().add(nomeAsteroide);
 	        singleton.getObj().put(nomeAsteroide, asteroide);
 	    }
-	    contatoreSerie++;
 	}
 	
 	private void handleIncomingMessage(String message) {
@@ -236,7 +236,9 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
             case "startAsteroidi":
             	long ntpTime = receivedJson.get("ntpTime").getAsLong();
                 int seed = receivedJson.get("seed").getAsInt();
-                scheduleAsteroidTimer(ntpTime - System.currentTimeMillis(), seed);
+                int ondata = receivedJson.get("ondata").getAsInt();
+                //clearAsteroids();
+                scheduleAsteroidTimer(ntpTime - System.currentTimeMillis(), seed, ondata);
             	break;
             case "posizione":
 	            // Estrai il nome della navicella e le coordinate dal messaggio
@@ -293,6 +295,12 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
                 break;
         }
     }
+	
+	private void clearAsteroids() {
+	    singleton.getNomiAsteroidi().clear();
+	    Map<String, Cache> obj = singleton.getObj();
+	    obj.keySet().removeIf(name -> obj.get(name) instanceof Asteroide);
+	}
 	
 	public void sendPlayerPosition(int x, int y, double angolo) {
 	    JsonObject jsonMessage = new JsonObject();

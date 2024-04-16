@@ -34,6 +34,9 @@ public class Server {
     private Singleton singleton = Singleton.getInstance();
     private int contatoreSerie = 0;
     private long ntpTime;
+    private int ondataAttuale = 0;
+    private final int numeroOndate = 5;  // Numero totale di ondate
+    private Timer ondateTimer;
 
     public Server() throws IOException {
     	ntpTime = getNtpTime();
@@ -41,9 +44,28 @@ public class Server {
         System.out.println("Server avviato sulla porta " + port);
         
         precaricaImmagini();
+        programmaOndate();
         
         
-        
+    }
+    
+    private void programmaOndate() {
+        ondateTimer = new Timer();
+        ondateTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    if (ondataAttuale < numeroOndate) {
+                        scheduleAsteroidCreation();
+                        ondataAttuale++;
+                    } else {
+                        ondateTimer.cancel();  // Fermare il timer dopo l'ultima ondata
+                    }
+                } catch (IOException e) {
+                    System.err.println("Errore nella programmazione degli asteroidi: " + e.getMessage());
+                }
+            }
+        }, 0, 30000);  // Schedula una nuova ondata ogni 30 secondi
     }
     
     private long getNtpTime() throws IOException {
@@ -53,7 +75,10 @@ public class Server {
         try {
             InetAddress address = InetAddress.getByName(timeServer);
             TimeInfo timeInfo = client.getTime(address);
-            return timeInfo.getMessage().getTransmitTimeStamp().getTime();
+            long time = timeInfo.getMessage().getTransmitTimeStamp().getTime();
+            time /= 1000;
+            System.out.println("ntpTime = "+time);
+            return time;
         } finally {
             client.close();
         }
@@ -66,6 +91,7 @@ public class Server {
         jsonMessage.addProperty("tipo", "startAsteroidi");
         jsonMessage.addProperty("ntpTime", ntpTime);
         jsonMessage.addProperty("seed", seed);
+        jsonMessage.addProperty("ondata", ondataAttuale);
         broadcast(jsonMessage.toString());
     }
 
@@ -192,6 +218,7 @@ public class Server {
                 clients.add(handler);
                 
                 if(playerCount==2) {
+                	
                 	
                 	scheduleAsteroidCreation();
                 	
