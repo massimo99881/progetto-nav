@@ -13,7 +13,7 @@ public class Proiettile  {
     
 	private long id;
     double x, y; // Posizione del proiettile
-    String mittente;
+    String mittente; //owner (chi ha sparato , es. Navicella1)
     double velocita = 7; // Velocità del proiettile
     double angolo;
     

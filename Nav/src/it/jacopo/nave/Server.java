@@ -62,6 +62,8 @@ public class Server {
             // Assume che il gioco abbia esattamente due navicelle: navicella1 e navicella2
             Nav nav1 = getNavicella("navicella1");
             Nav nav2 = getNavicella("navicella2");
+            
+            System.out.println("asteroidi nav1 "+nav1.getAsteroidiDistrutti()+ ", "+nav2.getAsteroidiDistrutti());
 
             // Calcola il vincitore e il perdente
             String winner, loser;

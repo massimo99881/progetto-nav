@@ -138,6 +138,10 @@ java -jar space-defenders.jar
 - [OK] fix post-reset game per ricalcolo ascissa asteroidi quando resize panel
 - [OK] fix post hai vinto
 - [WIP] multi-giocatore
+	1. player che si collega per primo : viene mostrato messaggio nel panel "in attesa giocatore 2"
+	2. il pareggio non è un pareggio 
+	3. un player2 non vede il fuoco dietro il player1
+	4. check ulteriore sincro (al netto del ridimensionamento finestra)
 - [OK] bloccare movimento quando si sposta/ridimensiona la win
 - [OK] prima ondata su client 2 leggermente in ritardo
 - [OK] aggiungere tutte le altre logiche (collisione asteroidi con nav e proiettili)

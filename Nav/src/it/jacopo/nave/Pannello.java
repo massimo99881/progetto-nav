@@ -530,6 +530,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    g.drawString(contatoreText, 10, 20); // 10 pixel dal bordo sinistro e 20 pixel dal bordo superiore
 	    //Nav n = (Nav)obj.get(clientNavicella);
 	    //sendPlayerPosition(n.x,n.y,n.angolo); //TODO capire
+	    
+	    
 	}
 	
 	private void controllaCollisioneNavAsteroid(Entry<String, Cache> entry) {
