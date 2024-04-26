@@ -236,6 +236,10 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
         String tipo = receivedJson.get("tipo").getAsString();
 
         switch (tipo) {
+	        case "gameEnd":
+	            JOptionPane.showMessageDialog(frame, receivedJson.get("message").getAsString(), "Game Over", JOptionPane.INFORMATION_MESSAGE);
+	            // Optionally reset or close the game
+	            break;
 	        case "startGame":
 	            startAudio();  // Avvia l'audio quando il gioco inizia
 	            break;
@@ -547,6 +551,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 		    sendVisibilityChange(navicella1.nome, false);  // Invia aggiornamenti ai client
 		    gameStopped = true; 
 		    clipAudio.stop();
+		    sendPlayerDeath(clientNavicella);
+		    
 		    try {
 		        File fileAudio = new File(Conf._RESOURCES_AUDIO_PATH + "losing.wav"); // Assicurati che il percorso sia corretto
 		        AudioInputStream audioStream = AudioSystem.getAudioInputStream(fileAudio);
@@ -561,6 +567,13 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        // Riavvia il gioco immediatamente dopo la chiusura del messaggio
 	        return;
 		}
+	}
+	
+	public void sendPlayerDeath(String playerType) {
+	    JsonObject jsonMessage = new JsonObject();
+	    jsonMessage.addProperty("tipo", "morteGiocatore");
+	    jsonMessage.addProperty("navicella", playerType);
+	    send(jsonMessage.toString());
 	}
 	
 	public void sendVisibilityChange(String navicellaName, boolean isVisible) {

@@ -62,6 +62,10 @@ public class Handler implements Runnable {
                         // Broadcast del messaggio agli altri client
                         server.broadcast(receivedText, this.playerType);
                         break;
+                    case "morteGiocatore":
+                        String deceasedPlayerType = receivedJson.get("navicella").getAsString();
+                        server.processDeath(deceasedPlayerType);
+                        break;
                     default:
                         System.err.println("Tipo di evento sconosciuto: " + tipo);
                         break;

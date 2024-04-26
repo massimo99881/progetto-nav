@@ -8,13 +8,10 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -32,11 +29,11 @@ public class Server {
     private int playerCount = 0;
     private final Map<String, Dimension> gameDimensions = new HashMap<>();
     private Singleton singleton = Singleton.getInstance();
-    private int contatoreSerie = 0;
     private long ntpTime;
     private int ondataAttuale = 0;
     private final int numeroOndate = 5;  // Numero totale di ondate
     private Timer ondateTimer;
+    private Map<String, Integer> deathsCount = new HashMap<>();
 
     public Server() throws IOException {
     	ntpTime = getNtpTime();
@@ -45,9 +42,83 @@ public class Server {
         
         precaricaImmagini();
         programmaOndate();
-        
+     // Initialize death counts
+        deathsCount.put("navicella1", 0);
+        deathsCount.put("navicella2", 0);
         
     }
+    
+    public Nav getNavicella(String playerType) {
+        for (Handler client : clients) {
+            if (client.getPlayerType().equals(playerType)) {
+                return client.getNavicella();
+            }
+        }
+        return null; // Return null if no matching navicella is found
+    }
+    
+    private void checkAsteroidWavesCompletion() {
+        if (ondataAttuale >= numeroOndate) {
+            // Assume che il gioco abbia esattamente due navicelle: navicella1 e navicella2
+            Nav nav1 = getNavicella("navicella1");
+            Nav nav2 = getNavicella("navicella2");
+
+            // Calcola il vincitore e il perdente
+            String winner, loser;
+            if (nav1.getAsteroidiDistrutti() > nav2.getAsteroidiDistrutti()) {
+                winner = "navicella1";
+                loser = "navicella2";
+            } else if (nav1.getAsteroidiDistrutti() < nav2.getAsteroidiDistrutti()) {
+                winner = "navicella2";
+                loser = "navicella1";
+            } else {
+                // In caso di parità, potresti decidere di inviare un messaggio di pareggio
+            	sendEndGameMessageToNav("navicella1", "Pareggio! Entrambe le navicelle hanno distrutto lo stesso numero di asteroidi.");
+                sendEndGameMessageToNav("navicella2", "Pareggio! Entrambe le navicelle hanno distrutto lo stesso numero di asteroidi.");
+                return;
+            }
+
+            // Invia il messaggio di vittoria al vincitore
+            sendEndGameMessageToNav(winner, "Hai vinto per aver distrutto più asteroidi!");
+            sendEndGameMessageToNav(loser,"Hai perso per aver distrutto meno asteroidi.");
+        }
+    }
+
+    public void sendEndGameMessageToNav(String nav, String message) {
+        JsonObject jsonMessage = new JsonObject();
+        jsonMessage.addProperty("tipo", "gameEnd");
+        jsonMessage.addProperty("message", message);
+        
+        for (Handler client : clients) {
+            if (client.getPlayerType().equals(nav)) {
+            	
+                client.sendMessage(jsonMessage.toString());
+            }
+        }
+    }
+
+    
+    private void checkAndEndGame(String deceased) {
+        // Increment death count
+        int deaths = deathsCount.get(deceased) + 1;
+        deathsCount.put(deceased, deaths);
+
+        // Check if it's the second death
+        if (deaths == 1) {
+            // Determine the winner
+            String winner = deceased.equals("navicella1") ? "navicella2" : "navicella1";
+            sendEndGameMessageToNav(winner, "Hai vinto perché l'altro giocatore è morto");
+        }
+    }
+    
+    public void processDeath(String playerType) {
+        // Logic to process player death
+        System.out.println(playerType + " has died.");
+
+        // Update death count and check for game end condition
+        checkAndEndGame(playerType);
+    }
+
     
     private void programmaOndate() {
         ondateTimer = new Timer();
@@ -60,6 +131,7 @@ public class Server {
                         ondataAttuale++;
                     } else {
                         ondateTimer.cancel();  // Fermare il timer dopo l'ultima ondata
+                        checkAsteroidWavesCompletion();
                     }
                 } catch (IOException e) {
                     System.err.println("Errore nella programmazione degli asteroidi: " + e.getMessage());
