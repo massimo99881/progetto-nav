@@ -219,7 +219,7 @@ public class Server {
                 
                 if(playerCount==2) {
                 	
-                	
+                	startGame();  // Avvia il gioco quando entrambi i giocatori sono connessi
                 	scheduleAsteroidCreation();
                 	
             	    for(Handler h : clients) {
@@ -236,6 +236,14 @@ public class Server {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    public synchronized void startGame() {
+        if (clients.size() == 2) { // Assumi che il gioco richieda esattamente due client
+            JsonObject jsonMessage = new JsonObject();
+            jsonMessage.addProperty("tipo", "startGame");
+            broadcast(jsonMessage.toString());  // Invia il messaggio di inizio gioco a tutti i client
         }
     }
 

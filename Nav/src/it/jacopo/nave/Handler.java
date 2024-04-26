@@ -58,6 +58,10 @@ public class Handler implements Runnable {
                         int altezza = receivedJson.get("altezza").getAsInt();
                         server.setGameDimensions(this.playerType, larghezza, altezza);
                         break;
+                    case "aggiornamentoVisibilita":
+                        // Broadcast del messaggio agli altri client
+                        server.broadcast(receivedText, this.playerType);
+                        break;
                     default:
                         System.err.println("Tipo di evento sconosciuto: " + tipo);
                         break;

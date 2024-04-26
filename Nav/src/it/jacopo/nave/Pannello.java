@@ -5,6 +5,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -39,6 +40,7 @@ import javax.sound.sampled.Clip;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import java.util.Timer;
@@ -73,7 +75,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	private javax.swing.Timer timerSparo;
 	private long lastShootTime = 0;
 	private final long SHOOT_INTERVAL = 100; // Intervallo tra gli spari in millisecondi
-	private int asteroidiDistrutti = 0;
 	private int larghezzaPrecedente;
 	private String clientNavicella = "";
 	private Singleton singleton ;
@@ -104,9 +105,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
         // Aggiungi 'this' come ComponentListener del pannello
         this.addComponentListener(this);
         
-//        caricaAudio();
-//        clipAudio.start(); 
-//        clipAudio.loop(Clip.LOOP_CONTINUOUSLY); 
 	}
 	
 	void precaricaImmagini() {
@@ -224,12 +222,31 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    }
 	}
 	
+	private void startAudio() {
+	    caricaAudio();  // Carica l'audio solo se non è già stato caricato
+	    if (!clipAudio.isRunning()) {
+	        clipAudio.start();
+	        clipAudio.loop(Clip.LOOP_CONTINUOUSLY);
+	    }
+	}
+	
 	private void handleIncomingMessage(String message) {
 		System.out.println("Pannello\t"+message);
         JsonObject receivedJson = JsonParser.parseString(message).getAsJsonObject();
         String tipo = receivedJson.get("tipo").getAsString();
 
         switch (tipo) {
+	        case "startGame":
+	            startAudio();  // Avvia l'audio quando il gioco inizia
+	            break;
+	        case "aggiornamentoVisibilita":
+	            String navicellaName = receivedJson.get("navicella").getAsString();
+	            boolean isVisible = receivedJson.get("isVisible").getAsBoolean();
+	            Nav navicella = (Nav) singleton.getObj().get(navicellaName);
+	            if (navicella != null) {
+	                navicella.isVisible = isVisible;
+	            }
+	            break;
             case "tipoNavicella":
                 playerType = receivedJson.get("navicella").getAsString();
                 this.clientNavicella = playerType;
@@ -489,7 +506,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        	Asteroide a = (Asteroide) gameObject;
 	            a.updateMovement();
 	            // Controlla le collisioni con ogni asteroide qui
-	            //controllaCollisioneNavAsteroid(entry);
+	            controllaCollisioneNavAsteroid(entry);
 	            a.draw(g2d);
 	        }
 	        if (gameObject instanceof Nav) {
@@ -504,10 +521,54 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    g.setFont(new Font("Arial", Font.BOLD, 14));
 
 	    // Disegna il contatore nella parte superiore della finestra di gioco
-	    String contatoreText = "Asteroidi Distrutti: " + asteroidiDistrutti;
+	    Nav navicella = (Nav) singleton.getObj().get(clientNavicella);
+	    String contatoreText = "Asteroidi Distrutti: " + navicella.getAsteroidiDistrutti();
 	    g.drawString(contatoreText, 10, 20); // 10 pixel dal bordo sinistro e 20 pixel dal bordo superiore
 	    //Nav n = (Nav)obj.get(clientNavicella);
 	    //sendPlayerPosition(n.x,n.y,n.angolo); //TODO capire
+	}
+	
+	private void controllaCollisioneNavAsteroid(Entry<String, Cache> entry) {
+		Nav navicella1 = (Nav) singleton.getObj().get(clientNavicella);
+        Asteroide asteroide = (Asteroide) entry.getValue();
+
+        // Controllo preliminare bounding box per ridurre i calcoli
+        if (!navicella1.getBounds().intersects(asteroide.getBounds())) {
+			return;
+		}
+        
+		Area areaNav = new Area(navicella1.getTransf());
+		Area areaAsteroide = new Area(asteroide.getTransf());
+		areaNav.intersect(areaAsteroide);
+		
+		if (!areaNav.isEmpty()) {
+		    System.out.println( "Collisione avvenuta! Gioco terminato.");
+		    navicella1.isVisible = false;  // Imposta la navicella come non visibile
+		    sendVisibilityChange(navicella1.nome, false);  // Invia aggiornamenti ai client
+		    gameStopped = true; 
+		    clipAudio.stop();
+		    try {
+		        File fileAudio = new File(Conf._RESOURCES_AUDIO_PATH + "losing.wav"); // Assicurati che il percorso sia corretto
+		        AudioInputStream audioStream = AudioSystem.getAudioInputStream(fileAudio);
+		        clipAudio = AudioSystem.getClip();
+		        clipAudio.open(audioStream);
+		        clipAudio.start();
+		    } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+		        e.printStackTrace();
+		    }
+		    JOptionPane.showMessageDialog(null, "Hai perso! Il gioco verrà riavviato.", "Game Over", JOptionPane.INFORMATION_MESSAGE);
+	        //resetGame(); 
+	        // Riavvia il gioco immediatamente dopo la chiusura del messaggio
+	        return;
+		}
+	}
+	
+	public void sendVisibilityChange(String navicellaName, boolean isVisible) {
+	    JsonObject jsonMessage = new JsonObject();
+	    jsonMessage.addProperty("tipo", "aggiornamentoVisibilita");
+	    jsonMessage.addProperty("navicella", navicellaName);
+	    jsonMessage.addProperty("isVisible", isVisible);
+	    send(jsonMessage.toString());
 	}
 
 	private void controllaCollisioneNavCursore() {
@@ -547,6 +608,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	}
 	
 	public void aggiornaGioco() {
+		
+		// ciclo per ogni proiettile
 	    Iterator<Proiettile> iterProiettili = proiettili.iterator();
 	    while (iterProiettili.hasNext()) {
 	    	
@@ -561,6 +624,94 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            // Rilascia il proiettile nel pool per il riutilizzo
 	            singleton.releaseProiettile(proiettile); 
 	            continue;
+	        }
+	        
+	        //ciclo per ogni asteroide
+	        Iterator<Entry<String, Cache>> iterObj = singleton.getObj().entrySet().iterator();
+	        while (iterObj.hasNext()) {
+	            Entry<String, Cache> entry = iterObj.next();
+	            Cache gameObject = entry.getValue();
+	            
+	            if (gameObject instanceof Asteroide) {
+	            	
+	            	Asteroide asteroide = (Asteroide) gameObject;
+	            	
+            	 	//prima ottimizzazione: calcolare le aree e shape e verifico se i rettangoli collidono
+            	 	Rectangle boundsAsteroide = asteroide.getBounds(); 
+            	 	Rectangle boundsProiettile = proiettile.getBounds();
+            	 	
+	                if (boundsProiettile.intersects(boundsAsteroide)) {
+	                	 
+	                	//Se la distanza è maggiore , salta la verifica dettagliata e continua con il prossimo asteroide
+	                	//asteroide.updateMovement();
+	                	//proiettile.aggiorna();
+	                	double distanza = Math.sqrt(
+	                            Math.pow(asteroide.getX() - proiettile.getX(), 2) +
+	                            Math.pow(asteroide.getY() - proiettile.getY(), 2)
+	                        );
+	                	
+	                	/**
+	                	 * Soglia di distanza per decidere se effettuare controlli di collisione dettagliati
+	                	 * Una soglia maggiore porta a un rilevamento delle collisioni più preciso ma può aumentare il carico computazionale
+	                	 */
+	                    if (distanza >= 30) {
+	                    	// Rimuovi il proiettile
+	 	                    iterProiettili.remove(); 
+	 	                    // Rilascia il proiettile nel pool per il riutilizzo
+	 	                    singleton.releaseProiettile(proiettile); 
+	 	                    // Aggiorna lo stato dell'asteroide per il colpo ricevuto
+	 	                    asteroide.colpito(); 
+
+	 	                    if (asteroide.getColpiSubiti() >= 5) {
+	 	                    	// Rimuovi l'asteroide se è stato distrutto
+	 	                        iterObj.remove(); 
+	 	                        // Stampa un messaggio in console
+	 	                        System.out.println(asteroide.name + " è stato distrutto"); 
+		 	                    if (proiettile.getMittente().equals(clientNavicella)) {
+		 	                          // Ottieni la navicella del client e incrementa il conteggio degli asteroidi distrutti
+		 	                          Nav navicella = (Nav) singleton.getObj().get(clientNavicella);
+		 	                          if (navicella != null) {
+		 	                              navicella.incrementaAsteroidiDistrutti();
+		 	                          }
+		 	                    }
+	 	                       
+	 	                      try {
+		 	         		        File fileAudio = new File(Conf._RESOURCES_AUDIO_PATH + "asteroid.wav"); 
+		 	         		        AudioInputStream audioStream = AudioSystem.getAudioInputStream(fileAudio);
+		 	         		        clipAudio = AudioSystem.getClip();
+		 	         		        clipAudio.open(audioStream);
+		 	         		        clipAudio.start();
+		 	         		    } catch (UnsupportedAudioFileException | IOException | LineUnavailableException ex) {
+		 	         		        ex.printStackTrace();
+		 	         		    }
+	 	                    }
+	 	                    // Esci dal ciclo se una collisione è stata trovata
+	 	                    break; 
+	                    }
+	                	
+	                    // eseguire la verifica più dettagliata basata su Area e Shape
+	 	                Area areaAsteroide = new Area(asteroide.getTransf());
+	 	                Area areaProiettile = new Area(proiettile.getShape());
+	 	                areaAsteroide.intersect(areaProiettile);
+	 	                if (!areaAsteroide.isEmpty()) {
+	 	                	// Rimuovi il proiettile
+	 	                    iterProiettili.remove(); 
+	 	                    // Rilascia il proiettile nel pool per il riutilizzo
+	 	                    singleton.releaseProiettile(proiettile); 
+	 	                    // Aggiorna lo stato dell'asteroide per il colpo ricevuto
+	 	                    asteroide.colpito(); 
+
+	 	                    if (asteroide.getColpiSubiti() >= 5) {
+	 	                    	// Rimuovi l'asteroide se è stato distrutto
+	 	                        iterObj.remove(); 
+	 	                        // Stampa un messaggio in console
+	 	                        System.out.println(asteroide.name + " è stato distrutto"); 
+	 	                    }
+	 	                    // Esci dal ciclo se una collisione è stata trovata
+	 	                    break; 
+	 	                }
+	                }
+	            }
 	        }
 	    }
 

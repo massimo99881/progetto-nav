@@ -22,12 +22,15 @@ public class Nav extends Cache{
 	double speed;
 	double angolo;
 	int x, y;
+	boolean isVisible;
+	private int asteroidiDistrutti = 0;
 	
 	public Nav(String nome) {
 		super();
 		this.nome = nome;
 		this.x = 0;
 		this.y = 0;
+		this.isVisible = true;  // La navicella è visibile di default
 
 		shape = new Polygon();
 		shape.addPoint(30, 0); // Punto di cima rimane centrato ma spostato leggermente a destra per aumentare la base
@@ -61,6 +64,10 @@ public class Nav extends Cache{
 	
 	
 	void draw(Graphics2D g) {
+		if (!isVisible) {
+            return;  // Se la navicella non è visibile, termina il metodo
+        }
+		
 		//g.setColor(Color.WHITE);
 	    // Imposta lo spessore del contorno
 	    //g.setStroke(new BasicStroke(3));
@@ -105,4 +112,12 @@ public class Nav extends Cache{
 	Rectangle getBounds() {
 	    return getTransf().getBounds();
 	}
+	
+	public void incrementaAsteroidiDistrutti() {
+        asteroidiDistrutti++;
+    }
+
+    public int getAsteroidiDistrutti() {
+        return asteroidiDistrutti;
+    }
 }

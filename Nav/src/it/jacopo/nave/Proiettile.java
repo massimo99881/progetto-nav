@@ -27,8 +27,6 @@ public class Proiettile  {
         
     }
     
-    
-    
     void aggiorna() {
         x += velocita * Math.cos(angolo);
         y += velocita * Math.sin(angolo);

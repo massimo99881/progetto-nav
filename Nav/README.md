@@ -101,6 +101,14 @@ void draw(Graphics2D g) {
 }
 ```
 
+### Multiplayer
+Modificare nel client l'indirizzo del server corretto. Per verificare qual è l'indirizzo del server, andare nella macchina dove esegue il server e tramite prompt di comando digitare ifconfig . Sostituire quindi il valore dell'indirizzo ip del server nel client alla riga dove viene impostato. Di seguito la riga in questione:
+
+```java
+
+private final String serverAddress = "127.0.0.1";
+```
+
 ## Requisiti di Sistema
 - Java Runtime Environment 8 o superiore
 - Risoluzione schermo consigliata: 1280x720
@@ -130,10 +138,10 @@ java -jar space-defenders.jar
 - [OK] fix post-reset game per ricalcolo ascissa asteroidi quando resize panel
 - [OK] fix post hai vinto
 - [WIP] multi-giocatore
-- [WIP] bloccare movimento quando si sposta/ridimensiona la win
-- [WIP] prima ondata su client 2 leggermente in ritardo
-- [WIP] aggiungere tutte le altre logiche (collisione asteroidi con nav e proiettili)
-- [TODO] verificare rendering proiettili 
+- [OK] bloccare movimento quando si sposta/ridimensiona la win
+- [OK] prima ondata su client 2 leggermente in ritardo
+- [OK] aggiungere tutte le altre logiche (collisione asteroidi con nav e proiettili)
+- [OK] verificare rendering proiettili 
 
 ## Contribuire
 Siamo aperti a contributi! Se vuoi migliorare il gioco o aggiungere nuove funzionalità, sentiti libero di aprire una pull request. Per contribuire al progetto, segui questi passaggi:
