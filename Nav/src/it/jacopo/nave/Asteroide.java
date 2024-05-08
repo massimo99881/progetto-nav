@@ -79,7 +79,7 @@ public class Asteroide extends Cache {
         int imageWidth = this.image.getWidth(null);
         int imageHeight = this.image.getHeight(null);
         
-        if (x + imageWidth >= 0 && x <= pannello.width && y + imageHeight >= 0 && y <= pannello.height) {
+        if (x + imageWidth >= 0 && x <= Conf.FRAME_WIDTH && y + imageHeight >= 0 && y <= Conf.FRAME_HEIGHT) {
         	if (this.image != null && opacita > 0 /* && !gameStopped */) {
         		
                 if (cachedTransform == null || x != prevX || y != prevY || angoloRotazione != prevAngoloRotazione) {

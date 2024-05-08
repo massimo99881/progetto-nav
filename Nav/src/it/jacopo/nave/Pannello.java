@@ -48,40 +48,26 @@ import java.util.Timer;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-public class Pannello extends JPanel implements KeyListener, MouseMotionListener, ComponentListener{
+public class Pannello extends JPanel implements KeyListener, MouseMotionListener{
 	
 	private static final long serialVersionUID = 6552850249592897170L;
+	
 	private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
-    private final String serverAddress = "127.0.0.1";
-    private final int serverPort = 8080;
-    private volatile boolean running = true; // Flag per controllare il ciclo di ricezione
     private String playerType;
-	
 	private int sfondoX = 0;
-	private final int VELOCITA_SFONDO = -1; // Sposta lo sfondo di 1 pixel a ogni tick del timer verso sinistra
-	public int width;
-	public int height;
-	
 	private boolean isInCollision = false;
-	boolean gameStopped = false;
-	ArrayList<Proiettile> proiettili = new ArrayList<>();
-    private javax.swing.Timer gameTimer;
-	Area area1;
-	int cx = 100, cy = 100;//thread update per drift astronave
+	private boolean gameStopped = false;
+	private ArrayList<Proiettile> proiettili = new ArrayList<>();
+	private int cx = 100, cy = 100;//thread update per drift astronave
 	private Image sfondo;
 	private boolean staSparando = false;
-	private javax.swing.Timer timerSparo;
 	private long lastShootTime = 0;
-	private final long SHOOT_INTERVAL = 100; // Intervallo tra gli spari in millisecondi
-	private int larghezzaPrecedente;
 	private String clientNavicella = "";
 	private Singleton singleton ;
 	private Clip clipAudio;
-	private int contatoreSerie = 0;
 	private JFrame frame;
-	
 	
 	public Pannello(JFrame frame) throws IOException {
 		this.frame = frame;
@@ -93,15 +79,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 		setupSfondo();
 		setupListeners();
 	    setupTimerGame();
-        
-        this.width = this.getWidth();
-        this.height = this.getHeight();
-        
         setupTimerSparo();
-     
-        this.larghezzaPrecedente = this.getWidth(); 
-        //this.addComponentListener(this);
-        
 	}
 	
 	void precaricaImmagini() {
@@ -135,9 +113,10 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
     }
 	
 	private void setupNavicelle() {
-		Nav nave = new Nav("navicella1");  //nave principale	
-		Nav nave2 = new Nav("navicella2"); //nave fantoccio per test collisioni
-		// Posizionamento della seconda navicella in basso a destra
+		// Inizializzazione navicelle
+		Nav nave = new Nav("navicella1");  	
+		Nav nave2 = new Nav("navicella2"); 
+		// Posizionamento delle navicelle
         nave2.x =  25; 
         nave2.y =  Conf.FRAME_HEIGHT/3 + 150; 
         nave.y = Conf.FRAME_HEIGHT/3;
@@ -149,7 +128,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	
 	private void setupNetworking() throws IOException {
 		try {
-            socket = new Socket(serverAddress, serverPort);
+            socket = new Socket("127.0.0.1", 8080);
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             startClient();
@@ -158,19 +137,12 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
         }
     }
 	
-	public void sendGameDimensions(int width, int height) {
-        JsonObject jsonMessage = new JsonObject();
-        jsonMessage.addProperty("tipo", "dimensioniGioco");
-        jsonMessage.addProperty("larghezza", width);
-        jsonMessage.addProperty("altezza", height);
-        send(jsonMessage.toString());
-    }
-	
 	public void send(String message) {
         out.println(message);
     }
 	
 	public void startClient() {
+		boolean running = true; // Flag per controllare il ciclo di ricezione
 	    new Thread(() -> {
 	        while (running) {
 	            try {
@@ -206,7 +178,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	
 	private void initializeAsteroids(int seed, int ondata) {
 	    Random rand = new Random(seed);
-	    int baseIndex = ondata * 100;  // Incrementa l'indice base per ogni ondata
 	    for (int i = 1; i <= Conf.asteroid_number; i++) {
 	    	int posY = rand.nextInt(Conf.FRAME_HEIGHT);  // Posizione Y casuale
 	        int asteroidIndex = Singleton.getNextAsteroidIndex();  // Ottieni l'indice univoco progressivo
@@ -287,11 +258,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            
 	            break;
             case "asteroide":
-//                Asteroide asteroide = new Asteroide(this, receivedJson.get("nome").getAsString(), receivedJson.get("imagePath").getAsString());
-//                asteroide.x = receivedJson.get("x").getAsInt();
-//                asteroide.y = receivedJson.get("y").getAsInt();
-//                singleton.getObj().put(asteroide.getNome(), asteroide);
-//                break;
             	int asteroideX = receivedJson.get("x").getAsInt();
 	            int asteroideY = receivedJson.get("y").getAsInt();
 	            String imagePath = receivedJson.get("imagePath").getAsString();
@@ -310,19 +276,11 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            	singleton.getNomiAsteroidi().add(name);
 	            }
 	            break;
-	            //controllaCollisioneNavAsteroid(entry);
-	            //SwingUtilities.invokeLater(() -> asteroidi.add(asteroide));
             default:
                 System.err.println("GameClient: Tipo di messaggio sconosciuto: " + tipo);
                 break;
         }
     }
-	
-	private void clearAsteroids() {
-	    singleton.getNomiAsteroidi().clear();
-	    Map<String, Cache> obj = singleton.getObj();
-	    obj.keySet().removeIf(name -> obj.get(name) instanceof Asteroide);
-	}
 	
 	public void sendPlayerPosition(int x, int y, double angolo) {
 	    JsonObject jsonMessage = new JsonObject();
@@ -350,7 +308,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            navicella.x = x;
 	            navicella.y = y;
 	            navicella.angolo = angolo;
-	            //repaint(); // Rinfresca il pannello solo se c'è stato un cambiamento
 	        }
 	    } else {
 	        System.err.println("Navicella non trovata: " + nomeNavicella);
@@ -359,7 +316,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	
 	private void caricaAudio() {
 	    try {
-	        File fileAudio = new File(Conf._RESOURCES_AUDIO_PATH + "Ignis.wav"); // Assicurati che il percorso sia corretto
+	        File fileAudio = new File(Conf._RESOURCES_AUDIO_PATH + "Ignis.wav"); 
 	        AudioInputStream audioStream = AudioSystem.getAudioInputStream(fileAudio);
 	        clipAudio = AudioSystem.getClip();
 	        clipAudio.open(audioStream);
@@ -367,67 +324,11 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        e.printStackTrace();
 	    }
 	}
-	
-	@Override
-	public void componentResized(ComponentEvent e) {
-//		Map<String, Cache> obj = singleton.getObj();
-//	    if (this.getWidth() > 0 && this.larghezzaPrecedente > 0) { // Assicurati che entrambe le larghezze siano valide
-//	    	// Aggiorna la posizione delle navicelle
-//	        for (Entry<String, Cache> entry : obj.entrySet()) {
-//	            Cache gameObject = entry.getValue();
-//	            if (gameObject instanceof Nav) {
-//	            	Nav n = (Nav) gameObject;
-//	                double proporzione = n.x / (double) this.larghezzaPrecedente;
-//	                n.x = (int) (proporzione * this.getWidth());
-//	            }
-//	        }
-//
-//	        // Aggiorna la posizione degli asteroidi
-//	        for (String nomeAsteroide : singleton.getNomiAsteroidi()) {
-//	            Asteroide asteroide = (Asteroide)obj.get(nomeAsteroide);
-//	            if (asteroide != null) {
-//	                double proporzione = asteroide.x / (double) this.larghezzaPrecedente;
-//	                asteroide.x = (int) (proporzione * this.getWidth());
-//	            }
-//	        }
-//	    }
-//
-//	    // Aggiorna 'larghezzaPrecedente' con la nuova larghezza dopo il ridimensionamento
-//	    this.larghezzaPrecedente = this.getWidth();
-//	    
-//	    sendGameDimensionsAfterRender();
-	}
-
-//	private void sendGameDimensionsAfterRender() {
-//	    // Verifica se il pannello è stato effettivamente visualizzato con dimensioni valide
-//	    if (this.getWidth() > 0 && this.getHeight() > 0) {
-//	        // Invia le dimensioni al server
-//	        sendGameDimensions(this.getWidth(), this.getHeight());
-//	    } else {
-//	        // Se le dimensioni non sono valide, potresti voler riprovare dopo un breve ritardo
-//	        SwingUtilities.invokeLater(() -> {
-//	            sendGameDimensionsAfterRender();
-//	        });
-//	    }
-//	}
-	
-	@Override
-	public void componentMoved(ComponentEvent e) {
-	}
-
-	@Override
-	public void componentShown(ComponentEvent e) {
-//		sendGameDimensionsAfterRender();
-	}
-
-	@Override
-	public void componentHidden(ComponentEvent e) {
-	}
 
 	private void spara() {
 	    if (staSparando) {
 	    	long currentTime = System.currentTimeMillis();
-	        if (currentTime - lastShootTime < SHOOT_INTERVAL) {
+	        if (currentTime - lastShootTime < 100) {  // Intervallo tra gli spari in millisecondi
 	            return; // Non abbastanza tempo è passato, quindi non sparare
 	        }
 	        lastShootTime = currentTime; // Aggiorna l'ultimo tempo di sparo
@@ -464,9 +365,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        // quindi non procedere ulteriormente per evitare NullPointerException.
 	        return;
 	    }
-		
-		this.width = this.getWidth();
-        this.height = this.getHeight();
         
 		// Controlla se l'immagine di sfondo è stata caricata correttamente
 		if (sfondo != null) {
@@ -478,7 +376,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        }
 	    }
 		// Aggiorna la posizione dello sfondo per il prossimo frame
-	    sfondoX += VELOCITA_SFONDO;
+	    sfondoX += -1;
 	    // Riavvolge lo sfondo se ha completamente attraversato verso sinistra
 	    if (sfondoX <= -sfondo.getWidth(this)) {
 	        sfondoX = 0;
@@ -514,7 +412,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        	Nav n = (Nav) gameObject;
 	        	n.draw(g2d);
 	        }
-	        
 	    }
 	    
 	    // Imposta il colore e il font per il testo del contatore
@@ -525,10 +422,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    Nav navicella = (Nav) singleton.getObj().get(clientNavicella);
 	    String contatoreText = "Asteroidi Distrutti: " + navicella.getAsteroidiDistrutti();
 	    g.drawString(contatoreText, 10, 20); // 10 pixel dal bordo sinistro e 20 pixel dal bordo superiore
-	    //Nav n = (Nav)obj.get(clientNavicella);
-	    //sendPlayerPosition(n.x,n.y,n.angolo); //TODO capire
-	    
-	    
 	}
 	
 	private void controllaCollisioneNavAsteroid(Entry<String, Cache> entry) {
@@ -593,7 +486,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 		Shape circle = createCircle(cx, cy, 20);
 		Area area2 = new Area(circle); // Area del cerchio
 		Nav navicella = (Nav)singleton.getObj().get(clientNavicella);
-		area1 = new Area(navicella.getTransf()); 
+		Area area1 = new Area(navicella.getTransf()); 
 		
 		area1.intersect(area2); //area1 diventa l'intersezione fra le 2
 		isInCollision = !area1.isEmpty(); // Aggiorna lo stato di intersezione
@@ -607,7 +500,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	private void riproduciSuonoSparo() {
 	    try {
 	        // Carica il suono dello sparo
-	        File fileAudio = new File(Conf._RESOURCES_AUDIO_PATH + "laser.wav"); // Assicurati che il percorso sia corretto
+	        File fileAudio = new File(Conf._RESOURCES_AUDIO_PATH + "laser.wav"); 
 	        AudioInputStream audioStream = AudioSystem.getAudioInputStream(fileAudio);
 	        Clip clipSparo = AudioSystem.getClip();
 	        clipSparo.open(audioStream);
@@ -730,7 +623,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	}
 
 	private void setupTimerSparo() {
-		timerSparo = new javax.swing.Timer(100, new ActionListener() { // Imposta un intervallo appropriato per la frequenza di sparo
+		// Imposta un intervallo appropriato per la frequenza di sparo
+		javax.swing.Timer timerSparo = new javax.swing.Timer(100, new ActionListener() { 
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (staSparando) {
@@ -743,7 +637,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 
 	private void setupTimerGame() {
 		// Inizializza e avvia il Timer
-        gameTimer = new javax.swing.Timer(Conf._FPSms, new ActionListener() {
+		javax.swing.Timer gameTimer = new javax.swing.Timer(Conf._FPSms, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 aggiornaGioco(); // Aggiorna lo stato del gioco
@@ -803,10 +697,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        if (!isInCollision) {
 	        	Nav nave = (Nav) singleton.getObj().get(clientNavicella);
 	            nave.speed += 10;
-	            //TODO capire
 	            sendPlayerPosition(nave.x, nave.y, nave.angolo);
 	        }
-	        //repaint();
 	    }
 	}
 
@@ -822,7 +714,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
                 nave.angolo = angleToMouse;
                 spara(); 
                 
-                //TODO capire
                 sendPlayerPosition(nave.x, nave.y, nave.angolo);
             }
         }
