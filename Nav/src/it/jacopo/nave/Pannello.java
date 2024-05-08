@@ -56,10 +56,13 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
     private BufferedReader in;
     private final String serverAddress = "127.0.0.1";
     private final int serverPort = 8080;
-    private volatile boolean running = true; 
+    private volatile boolean running = true; // Flag per controllare il ciclo di ricezione
     private String playerType;
+	
 	private int sfondoX = 0;
 	private final int VELOCITA_SFONDO = -1; // Sposta lo sfondo di 1 pixel a ogni tick del timer verso sinistra
+	public int width;
+	public int height;
 	
 	private boolean isInCollision = false;
 	boolean gameStopped = false;
@@ -72,13 +75,13 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	private javax.swing.Timer timerSparo;
 	private long lastShootTime = 0;
 	private final long SHOOT_INTERVAL = 100; // Intervallo tra gli spari in millisecondi
+	private int larghezzaPrecedente;
 	private String clientNavicella = "";
 	private Singleton singleton ;
 	private Clip clipAudio;
+	private int contatoreSerie = 0;
 	private JFrame frame;
 	
-	public int width;
-	public int height;
 	
 	public Pannello(JFrame frame) throws IOException {
 		this.frame = frame;
