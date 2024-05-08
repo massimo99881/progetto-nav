@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
-import java.util.TimerTask; // Util TimerTask for scheduling tasks
+import java.util.TimerTask; 
 
 import javax.imageio.ImageIO;
 import javax.sound.sampled.AudioInputStream;
@@ -44,25 +44,22 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import java.util.Timer;
-import java.util.TimerTask;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 public class Pannello extends JPanel implements KeyListener, MouseMotionListener, ComponentListener{
 	
+	private static final long serialVersionUID = 6552850249592897170L;
 	private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
     private final String serverAddress = "127.0.0.1";
     private final int serverPort = 8080;
-    private volatile boolean running = true; // Flag per controllare il ciclo di ricezione
+    private volatile boolean running = true; 
     private String playerType;
-	
 	private int sfondoX = 0;
 	private final int VELOCITA_SFONDO = -1; // Sposta lo sfondo di 1 pixel a ogni tick del timer verso sinistra
-	public int width;
-	public int height;
 	
 	private boolean isInCollision = false;
 	boolean gameStopped = false;
@@ -75,21 +72,19 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	private javax.swing.Timer timerSparo;
 	private long lastShootTime = 0;
 	private final long SHOOT_INTERVAL = 100; // Intervallo tra gli spari in millisecondi
-	private int larghezzaPrecedente;
 	private String clientNavicella = "";
 	private Singleton singleton ;
 	private Clip clipAudio;
-	private int contatoreSerie = 0;
 	private JFrame frame;
 	
+	public int width;
+	public int height;
 	
 	public Pannello(JFrame frame) throws IOException {
 		this.frame = frame;
 		this.singleton = Singleton.getInstance();
 		
 		precaricaImmagini();
-		
-		
 		setupNetworking();
 		setupNavicelle();
 		setupSfondo();
@@ -102,8 +97,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
         setupTimerSparo();
      
         this.larghezzaPrecedente = this.getWidth(); 
-        // Aggiungi 'this' come ComponentListener del pannello
-        this.addComponentListener(this);
+        //this.addComponentListener(this);
         
 	}
 	
