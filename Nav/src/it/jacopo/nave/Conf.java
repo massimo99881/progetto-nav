@@ -1,10 +1,5 @@
 package it.jacopo.nave;
 
-import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.Polygon;
-import java.awt.image.BufferedImage;
-
 public class Conf {
 	
 	final static String _RESOURCES_IMG_PATH = "resources/img/";
@@ -18,5 +13,6 @@ public class Conf {
 	final static int Level_Total = 10;  //NUMERO DI LIVELLI
 	final static int FRAME_HEIGHT = 800;
 	final static int FRAME_WIDTH = 1200;
+	public static final int MAX_ONDATE = 5;
 		
 }

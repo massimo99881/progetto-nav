@@ -73,6 +73,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	private Singleton singleton ;
 	private Clip clipAudio;
 	private JFrame frame;
+	private int currentWave = 0;  // Inizializza la variabile per tenere traccia dell'ondata corrente
+
 	
 	public Pannello(JFrame frame) throws IOException {
 		this.frame = frame;
@@ -135,7 +137,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	
 	private void setupNetworking() throws IOException {
 		try {
-            socket = new Socket("127.0.0.1", 8080);
+            socket = new Socket("127.0.0.1", 8086);
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             startClient();
@@ -184,32 +186,46 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    }, "Client-Receiver").start();
 	}
 	
-	private void scheduleAsteroidTimer(long delay, int seed, int ondata) {
+	private void scheduleAsteroidTimer(long delay, int seed) {
 	    if (delay < 0) delay = 0;
 	    Timer timer = new Timer();
 	    timer.schedule(new TimerTask() {
 	        @Override
 	        public void run() {
 	            SwingUtilities.invokeLater(() -> {
-	                initializeAsteroids(seed, ondata);
+	                initializeAsteroids(seed);
 	            });
 	        }
 	    }, delay);
 	}
 	
-	private void initializeAsteroids(int seed, int ondata) {
-	    Random rand = new Random(seed);
-	    for (int i = 1; i <= Conf.asteroid_number; i++) {
-	    	int posY = rand.nextInt(Conf.FRAME_HEIGHT);  // Posizione Y casuale
-	        int asteroidIndex = Singleton.getNextAsteroidIndex();  // Ottieni l'indice univoco progressivo
-	        String nomeAsteroide = "asteroide" + asteroidIndex;  // Crea un nome univoco per l'asteroide
-	        Asteroide asteroide = new Asteroide(this, nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + ((i % 15) + 1) + ".png");
-	        asteroide.x = Conf.FRAME_WIDTH;
-	        asteroide.y = posY;
-	        singleton.getNomiAsteroidi().add(nomeAsteroide);
-	        singleton.getObj().put(nomeAsteroide, asteroide);
+	private void initializeAsteroids(int seed) {
+		if (currentWave <= Conf.MAX_ONDATE ) {
+			Random rand = new Random(seed);
+		    for (int i = 1; i <= Conf.asteroid_number; i++) {
+		        int posY = rand.nextInt(Conf.FRAME_HEIGHT);  // Posizione Y casuale
+		        int asteroidIndex = Singleton.getNextAsteroidIndex();  // Ottieni l'indice univoco progressivo
+		        String nomeAsteroide = "asteroide" + asteroidIndex;  // Crea un nome univoco per l'asteroide
+		        Asteroide asteroide = new Asteroide(this, nomeAsteroide, Conf._RESOURCES_IMG_PATH + "asteroide" + ((i % 15) + 1) + ".png");
+		        asteroide.x = Conf.FRAME_WIDTH;
+		        asteroide.y = posY;
+		        singleton.getNomiAsteroidi().add(nomeAsteroide);
+		        singleton.getObj().put(nomeAsteroide, asteroide);
+		    }
+		}
+		
+	    
+	    System.out.println("currentWave: "+currentWave+ ", MAX_ONDATE="+Conf.MAX_ONDATE);
+
+	    // Se è l'ultima ondata, verifica la condizione di fine gioco e invia il report
+	    if (currentWave == Conf.MAX_ONDATE+1 ) {
+	        SwingUtilities.invokeLater(() -> {
+	        	System.out.println("***invio aggiornamento al server ");
+	        	reportAsteroidsDestroyed();
+	        });
 	    }
 	}
+
 	
 	private void startAudio() {
 	    caricaAudio();  // Carica l'audio solo se non è già stato caricato
@@ -250,10 +266,14 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
             case "startAsteroidi":
             	long ntpTime = receivedJson.get("ntpTime").getAsLong();
                 int seed = receivedJson.get("seed").getAsInt();
-                int ondata = receivedJson.get("ondata").getAsInt();
+                //int ondata = receivedJson.get("ondata").getAsInt();
                 //clearAsteroids();
-                scheduleAsteroidTimer(ntpTime - System.currentTimeMillis(), seed, ondata);
+                scheduleAsteroidTimer(ntpTime - System.currentTimeMillis(), seed);
             	break;
+            case "updateWave":
+                currentWave = receivedJson.get("ondataAttuale").getAsInt();
+                System.out.println("Wave updated to: " + currentWave);
+                break;
             case "posizione":
 	            // Estrai il nome della navicella e le coordinate dal messaggio
 	            String nomeNavicella = receivedJson.get("nome").getAsString();
@@ -473,6 +493,22 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    String contatoreText = "Asteroidi Distrutti: " + navicella.getAsteroidiDistrutti();
 	    g.drawString(contatoreText, 10, 20); // 10 pixel dal bordo sinistro e 20 pixel dal bordo superiore
 	}
+	
+	public void reportAsteroidsDestroyed() {
+	    Cache cacheObj = singleton.getObj().get(clientNavicella);
+	    if (cacheObj instanceof Nav) {  // Verifica che l'oggetto sia effettivamente una Nav
+	        Nav navicella = (Nav) cacheObj;
+	        int distrutti = navicella.getAsteroidiDistrutti();  // Ora puoi chiamare il metodo in sicurezza
+	        JsonObject jsonMessage = new JsonObject();
+	        jsonMessage.addProperty("tipo", "reportAsteroidsDestroyed");
+	        jsonMessage.addProperty("count", distrutti);
+	        send(jsonMessage.toString());
+	    } else {
+	        System.err.println("L'oggetto non è di tipo Nav");
+	    }
+	}
+
+
 	
 	private void controllaCollisioneNavAsteroid(Entry<String, Cache> entry) {
 		Nav navicella1 = (Nav) singleton.getObj().get(clientNavicella);

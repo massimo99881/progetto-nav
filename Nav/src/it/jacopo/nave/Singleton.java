@@ -43,7 +43,9 @@ public class Singleton {
     }
 
     public List<Proiettile> getActiveProiettili() {
-        return new LinkedList<>(active); // Return a copy to avoid modification outside
+        synchronized (active) {
+            return new ArrayList<>(active);  // Crea una copia per evitare modifiche concorrenti
+        }
     }
     
     public Map<String, Cache> getObj(){

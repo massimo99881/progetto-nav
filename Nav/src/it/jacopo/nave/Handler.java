@@ -52,9 +52,20 @@ public class Handler implements Runnable {
 	                case "asteroide":
 	                case "sparo":
                     case "posizione":
+                    	server.broadcast(receivedText);
+                        break;
                     case "aggiornamentoVisibilita":
                         // Broadcast del messaggio agli altri client
                         server.broadcast(receivedText, this.playerType);
+                        break;
+                    case "reportAsteroidsDestroyed":
+                        int count = receivedJson.get("count").getAsInt();
+                        server.receiveAsteroidsDestroyedReport(playerType, count);
+                        break;
+                    case "updateWave":
+                        // Logica per gestire l'aggiornamento dell'ondata, se necessario
+                        int currentWave = receivedJson.get("ondataAttuale").getAsInt();
+                        System.out.println("Current wave updated to: " + currentWave);
                         break;
                     case "morteGiocatore":
                         String deceasedPlayerType = receivedJson.get("navicella").getAsString();

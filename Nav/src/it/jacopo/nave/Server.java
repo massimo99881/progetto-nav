@@ -28,16 +28,13 @@ public class Server {
     private Timer ondateTimer;
     private boolean isPaused = false;
     private int ondataAttuale = 0;
-    private final int numeroOndate = 5;  // Numero totale di ondate
+    
+    private Map<String, Integer> asteroidsDestroyedCounts = new HashMap<>();
 
     public Server() throws IOException {
     	ntpTime = getNtpTime();
-        serverSocket = new ServerSocket(8080);
-        System.out.println("Server avviato sulla porta 8080");
-        
-        destroiedAsteroidsCount.put("navicella1", 0);
-        destroiedAsteroidsCount.put("navicella2", 0);
-        
+        serverSocket = new ServerSocket(8086);
+        System.out.println("Server avviato sulla porta 8086");
         ondateTimer = new Timer();
         programmaOndate();
         
@@ -52,34 +49,69 @@ public class Server {
         return null; // Return null if no matching navicella is found
     }
     
-    private void checkAsteroidWavesCompletion() {
-        if (ondataAttuale >= numeroOndate) {
-            // Assume che il gioco abbia esattamente due navicelle: navicella1 e navicella2
-            Nav nav1 = getNavicella("navicella1");
-            Nav nav2 = getNavicella("navicella2");
-            
-            System.out.println("asteroidi nav1 "+nav1.getAsteroidiDistrutti()+ ", "+nav2.getAsteroidiDistrutti());
-
-            // Calcola il vincitore e il perdente
-            String winner, loser;
-            if (nav1.getAsteroidiDistrutti() > nav2.getAsteroidiDistrutti()) {
-                winner = "navicella1";
-                loser = "navicella2";
-            } else if (nav1.getAsteroidiDistrutti() < nav2.getAsteroidiDistrutti()) {
-                winner = "navicella2";
-                loser = "navicella1";
-            } else {
-                // In caso di parità, potresti decidere di inviare un messaggio di pareggio
-            	sendEndGameMessageToNav("navicella1", "Pareggio! Entrambe le navicelle hanno distrutto lo stesso numero di asteroidi.");
-                sendEndGameMessageToNav("navicella2", "Pareggio! Entrambe le navicelle hanno distrutto lo stesso numero di asteroidi.");
-                return;
-            }
-
-            // Invia il messaggio di vittoria al vincitore
-            sendEndGameMessageToNav(winner, "Hai vinto per aver distrutto più asteroidi!");
-            sendEndGameMessageToNav(loser,"Hai perso per aver distrutto meno asteroidi.");
+    public void receiveAsteroidsDestroyedReport(String playerType, int count) {
+        asteroidsDestroyedCounts.put(playerType, count);
+        
+        // Controlla se sono stati ricevuti i conteggi da entrambi i giocatori
+        if (asteroidsDestroyedCounts.size() == 2) {
+            evaluateGameOutcome();
         }
     }
+
+    private void evaluateGameOutcome() {
+        int asteroidsDestroyed1 = asteroidsDestroyedCounts.getOrDefault("navicella1", 0);
+        int asteroidsDestroyed2 = asteroidsDestroyedCounts.getOrDefault("navicella2", 0);
+
+        System.out.println("Distrutti Nav1: "+asteroidsDestroyed1);
+        System.out.println("Distrutti Nav2: "+asteroidsDestroyed2);
+        
+        String winner, loser;
+        if (asteroidsDestroyed1 > asteroidsDestroyed2) {
+            winner = "navicella1";
+            loser = "navicella2";
+        } else if (asteroidsDestroyed1 < asteroidsDestroyed2) {
+            winner = "navicella2";
+            loser = "navicella1";
+        } else {
+            sendEndGameMessageToNav("navicella1", "Pareggio! Entrambe le navicelle hanno distrutto lo stesso numero di asteroidi.");
+            sendEndGameMessageToNav("navicella2", "Pareggio! Entrambe le navicelle hanno distrutto lo stesso numero di asteroidi.");
+            return;
+        }
+
+        sendEndGameMessageToNav(winner, "Hai vinto per aver distrutto più asteroidi!");
+        sendEndGameMessageToNav(loser, "Hai perso per aver distrutto meno asteroidi.");
+        asteroidsDestroyedCounts.clear(); // Pulisci i conteggi per il prossimo gioco
+    }
+
+    
+//    private void checkAsteroidWavesCompletion() {
+//        if (ondataAttuale >= Conf.MAX_ONDATE) {
+//            // Assume che il gioco abbia esattamente due navicelle: navicella1 e navicella2
+//            Nav nav1 = getNavicella("navicella1");
+//            Nav nav2 = getNavicella("navicella2");
+//            
+//            System.out.println("asteroidi nav1 "+nav1.getAsteroidiDistrutti()+ ", "+nav2.getAsteroidiDistrutti());
+//
+//            // Calcola il vincitore e il perdente
+//            String winner, loser;
+//            if (nav1.getAsteroidiDistrutti() > nav2.getAsteroidiDistrutti()) {
+//                winner = "navicella1";
+//                loser = "navicella2";
+//            } else if (nav1.getAsteroidiDistrutti() < nav2.getAsteroidiDistrutti()) {
+//                winner = "navicella2";
+//                loser = "navicella1";
+//            } else {
+//                // In caso di parità, potresti decidere di inviare un messaggio di pareggio
+//            	sendEndGameMessageToNav("navicella1", "Pareggio! Entrambe le navicelle hanno distrutto lo stesso numero di asteroidi.");
+//                sendEndGameMessageToNav("navicella2", "Pareggio! Entrambe le navicelle hanno distrutto lo stesso numero di asteroidi.");
+//                return;
+//            }
+//
+//            // Invia il messaggio di vittoria al vincitore
+//            sendEndGameMessageToNav(winner, "Hai vinto per aver distrutto più asteroidi!");
+//            sendEndGameMessageToNav(loser,"Hai perso per aver distrutto meno asteroidi.");
+//        }
+//    }
 
     public void sendEndGameMessageToNav(String nav, String message) {
         JsonObject jsonMessage = new JsonObject();
@@ -123,20 +155,31 @@ public class Server {
             public void run() {
                 if (isPaused) return; // Controlla se il timer è in pausa
                 
-                if (ondataAttuale < numeroOndate) {
+                if (ondataAttuale <= Conf.MAX_ONDATE) {
                     try {
+                        //if (ondataAttuale!=Conf.MAX_ONDATE) 
                         scheduleAsteroidCreation();
                         ondataAttuale++;
+                        broadcastWaveUpdate();
                     } catch (IOException e) {
                         System.err.println("Errore nella programmazione degli asteroidi: " + e.getMessage());
                     }
                 } else {
                     ondateTimer.cancel();  // Fermare il timer dopo l'ultima ondata
-                    checkAsteroidWavesCompletion();
+                    //checkAsteroidWavesCompletion();
                 }
             }
         }, 0, 30000); // Schedula una nuova ondata ogni 30 secondi
     }
+    
+    private void broadcastWaveUpdate() {
+        JsonObject jsonMessage = new JsonObject();
+        jsonMessage.addProperty("tipo", "updateWave");
+        jsonMessage.addProperty("ondataAttuale", ondataAttuale);
+        String message = jsonMessage.toString();
+        broadcast(message);  // Usa il metodo broadcast esistente per inviare il messaggio a tutti i client
+    }
+
     
     private long getNtpTime() throws IOException {
         String timeServer = "pool.ntp.org";
