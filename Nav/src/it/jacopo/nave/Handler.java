@@ -16,6 +16,7 @@ public class Handler implements Runnable {
     private BufferedReader in;
     private Server server;
     private String playerType; // Tipo di navicella assegnato a questo handler
+    private boolean updatesSuspended = false;
 
     public Handler(Socket socket, Server server, String playerType) {
         this.clientSocket = socket;
@@ -39,6 +40,9 @@ public class Handler implements Runnable {
 
             String receivedText;
             while ((receivedText = in.readLine()) != null) {
+            	if (updatesSuspended) {
+                    continue; // Ignora l'elaborazione mentre gli aggiornamenti sono sospesi
+                }
                 System.out.println("Ricevuto: " + receivedText);
                 JsonObject receivedJson = JsonParser.parseString(receivedText).getAsJsonObject();
                 String tipo = receivedJson.get("tipo").getAsString();
@@ -48,14 +52,6 @@ public class Handler implements Runnable {
 	                case "asteroide":
 	                case "sparo":
                     case "posizione":
-                        server.broadcast(receivedText, this.playerType);
-                        break;
-                    case "dimensioniGioco":
-                        // Estrai le dimensioni del gioco dal messaggio
-                        int larghezza = receivedJson.get("larghezza").getAsInt();
-                        int altezza = receivedJson.get("altezza").getAsInt();
-                        server.setGameDimensions(this.playerType, larghezza, altezza);
-                        break;
                     case "aggiornamentoVisibilita":
                         // Broadcast del messaggio agli altri client
                         server.broadcast(receivedText, this.playerType);
@@ -63,6 +59,12 @@ public class Handler implements Runnable {
                     case "morteGiocatore":
                         String deceasedPlayerType = receivedJson.get("navicella").getAsString();
                         server.processDeath(deceasedPlayerType);
+                        break;
+                    case "windowMoveStart":
+                        server.handleWindowMoveStart();
+                        break;
+                    case "windowMoveEnd":
+                        server.handleWindowMoveEnd();
                         break;
                     default:
                         System.err.println("Tipo di evento sconosciuto: " + tipo);
@@ -77,6 +79,26 @@ public class Handler implements Runnable {
         } finally {
             cleanup();
         }
+    }
+    
+    public void suspendUpdates() {
+        updatesSuspended = true;
+    }
+
+    public void resumeUpdates() {
+        updatesSuspended = false;
+    }
+    
+    void sendWindowMoveStart() {
+        JsonObject jsonMessage = new JsonObject();
+        jsonMessage.addProperty("tipo", "windowMoveStart");
+        sendMessage(jsonMessage.toString());
+    }
+
+    void sendWindowMoveEnd() {
+        JsonObject jsonMessage = new JsonObject();
+        jsonMessage.addProperty("tipo", "windowMoveEnd");
+        sendMessage(jsonMessage.toString());
     }
 
     void sendMessage(String message) {

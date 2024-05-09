@@ -1,9 +1,5 @@
 package it.jacopo.nave;
 
-import java.awt.Dimension;
-import java.awt.Image;
-import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -18,33 +14,27 @@ import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.commons.net.ntp.NTPUDPClient;
 import org.apache.commons.net.ntp.TimeInfo;
-import javax.imageio.ImageIO;
 
 import com.google.gson.JsonObject;
 
 public class Server {
     private ServerSocket serverSocket;
-    private final int port = 8080;
     private final List<Handler> clients = new CopyOnWriteArrayList<>();
-    private int playerCount = 0;
-    private final Map<String, Dimension> gameDimensions = new HashMap<>();
     private Singleton singleton = Singleton.getInstance();
     private long ntpTime;
     private int ondataAttuale = 0;
     private final int numeroOndate = 5;  // Numero totale di ondate
-    private Timer ondateTimer;
-    private Map<String, Integer> deathsCount = new HashMap<>();
+    private Map<String, Integer> destroiedAsteroidsCount = new HashMap<>();
 
     public Server() throws IOException {
     	ntpTime = getNtpTime();
-        serverSocket = new ServerSocket(port);
-        System.out.println("Server avviato sulla porta " + port);
+        serverSocket = new ServerSocket(8080);
+        System.out.println("Server avviato sulla porta 8080");
         
-        precaricaImmagini();
+        destroiedAsteroidsCount.put("navicella1", 0);
+        destroiedAsteroidsCount.put("navicella2", 0);
+        
         programmaOndate();
-     // Initialize death counts
-        deathsCount.put("navicella1", 0);
-        deathsCount.put("navicella2", 0);
         
     }
     
@@ -102,8 +92,8 @@ public class Server {
     
     private void checkAndEndGame(String deceased) {
         // Increment death count
-        int deaths = deathsCount.get(deceased) + 1;
-        deathsCount.put(deceased, deaths);
+        int deaths = destroiedAsteroidsCount.get(deceased) + 1;
+        destroiedAsteroidsCount.put(deceased, deaths);
 
         // Check if it's the second death
         if (deaths == 1) {
@@ -123,7 +113,7 @@ public class Server {
 
     
     private void programmaOndate() {
-        ondateTimer = new Timer();
+    	Timer ondateTimer = new Timer();
         ondateTimer.schedule(new TimerTask() {
             @Override
             public void run() {
@@ -168,44 +158,7 @@ public class Server {
         jsonMessage.addProperty("ondata", ondataAttuale);
         broadcast(jsonMessage.toString());
     }
-
     
-    void precaricaImmagini() {
-    	int asteroidNumber = Conf.asteroid_number;
-        // Caricamento e cache delle prime 15 immagini con nomi specifici
-        for (int i = 1; i <= asteroidNumber; i++) {
-            String percorso = Conf._RESOURCES_IMG_PATH + "asteroide" + i + ".png";
-            caricaImmagine(percorso);
-        }
-    }
-
-    void caricaImmagine(String path) {
-    	Map<String, Cache> imageCache = Singleton.getInstance().getImageCache();
-        if (!imageCache.containsKey(path)) {
-        	try {
-                BufferedImage originalImage = ImageIO.read(new File(path));
-                double scaleFactor = 0.2;
-                //double scaleFactor = 0.2 + (0.45 - 0.2) * rand.nextDouble();
-                int newWidth = (int) (originalImage.getWidth() * scaleFactor);
-                int newHeight = (int) (originalImage.getHeight() * scaleFactor);
-                Cache ac = new Cache(originalImage.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH));
-                singleton.getImageCache().put(path, ac);
-            } 
-        	catch (IOException e) {
-                e.printStackTrace();
-            }
-        	catch (Exception e) {
-                System.err.println("Errore nel caricamento dell'immagine da: " + path);
-                e.printStackTrace();
-            }
-        }
-    }
-    
-    public void setGameDimensions(String clientID, int larghezza, int altezza) {
-        gameDimensions.put(clientID, new Dimension(larghezza, altezza));
-        System.out.println("Dimensioni gioco aggiornate per " + clientID + ": " + larghezza + "x" + altezza);
-    }
-
     public synchronized void removeClient(Handler clientHandler) {
         clients.remove(clientHandler);
         System.out.println("Client disconnesso: " + clientHandler.getPlayerType());
@@ -261,22 +214,21 @@ public class Server {
     
     public synchronized void broadcast(String message) {
         for (Handler client : clients) {
-            System.out.println("GameServer > " + client.getPlayerType() + " :" + message);
             client.sendMessage(message);
+            System.out.println("Server: Broadcasting message to " + client.getPlayerType());
         }
     }
 
     private boolean proiettileValido(Proiettile proiettile) {
-        for (Dimension dim : gameDimensions.values()) {
-            if (proiettile.getX() >= 0 && proiettile.getX() <= dim.width &&
-                proiettile.getY() >= 0 && proiettile.getY() <= dim.height) {
-                return true;
-            }
+        if (proiettile.getX() >= 0 && proiettile.getX() <= Conf.FRAME_WIDTH &&
+            proiettile.getY() >= 0 && proiettile.getY() <= Conf.FRAME_HEIGHT) {
+            return true;
         }
         return false;
     }
     
     public void start() {
+    	int playerCount = 0;
         while (true) {
             try {
                 Socket clientSocket = serverSocket.accept();
@@ -312,6 +264,22 @@ public class Server {
             }
         }
     }
+    
+ // Metodo nel server per gestire l'inizio e la fine del movimento della finestra
+    public synchronized void handleWindowMoveStart() {
+        JsonObject jsonMessage = new JsonObject();
+        jsonMessage.addProperty("tipo", "suspendUpdates");
+        System.out.println("Server: Sending suspendUpdates to all clients.");
+        broadcast(jsonMessage.toString());
+    }
+
+    public synchronized void handleWindowMoveEnd() {
+        JsonObject jsonMessage = new JsonObject();
+        jsonMessage.addProperty("tipo", "resumeUpdates");
+        System.out.println("Server: Sending resumeUpdates to all clients.");
+        broadcast(jsonMessage.toString());
+    }
+
 
     public synchronized void startGame() {
         if (clients.size() == 2) { // Assumi che il gioco richieda esattamente due client

@@ -52,6 +52,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	
 	private static final long serialVersionUID = 6552850249592897170L;
 	
+	private boolean isWindowMoving ; // Nuovo campo per gestire il blocco del repaint
 	private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
@@ -80,6 +81,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 		setupListeners();
 	    setupTimerGame();
         setupTimerSparo();
+        
+        isWindowMoving = false;
 	}
 	
 	void precaricaImmagini() {
@@ -111,6 +114,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
             }
         }
     }
+    
 	
 	private void setupNavicelle() {
 		// Inizializzazione navicelle
@@ -276,6 +280,15 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            	singleton.getNomiAsteroidi().add(name);
 	            }
 	            break;
+            case "suspendUpdates":
+                isWindowMoving = true;
+                System.out.println("Client: Suspend updates, stopping rendering.");
+                break;
+            case "resumeUpdates":
+                isWindowMoving = false;
+                System.out.println("Client: Resume updates, enabling rendering.");
+                repaint();  // Assicura che l'interfaccia venga ridisegnata
+                break;
             default:
                 System.err.println("GameClient: Tipo di messaggio sconosciuto: " + tipo);
                 break;
@@ -356,11 +369,32 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    }
 	}
 
+	public void startWindowMove() {
+	    JsonObject jsonMessage = new JsonObject();
+	    jsonMessage.addProperty("tipo", "windowMoveStart");
+	    send(jsonMessage.toString());
+	}
+
+	public void endWindowMove() {
+	    JsonObject jsonMessage = new JsonObject();
+	    jsonMessage.addProperty("tipo", "windowMoveEnd");
+	    send(jsonMessage.toString());
+	    isWindowMoving = false;
+	}
+
+	
 	@Override
 	protected void paintComponent(Graphics g) {
-		super.paintComponent(g);
 		
-		if (clientNavicella == null || !singleton.getObj().containsKey(clientNavicella)) {
+		if (isWindowMoving) {
+	        System.out.println("Client: Rendering paused due to window moving.");
+	        return;
+	    }
+
+		super.paintComponent(g);
+	    System.out.println("Client: Rendering content.");
+		
+		if (gameStopped || clientNavicella == null || !singleton.getObj().containsKey(clientNavicella)) {
 	        // La navicella non è stata ancora impostata o non è presente nella mappa,
 	        // quindi non procedere ulteriormente per evitare NullPointerException.
 	        return;
@@ -669,6 +703,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 		    public void mouseReleased(MouseEvent e) {
 		        if (e.getButton() == MouseEvent.BUTTON1) {
 		            staSparando = false;
+		            endWindowMove();
+		            isWindowMoving = false;
 		        }
 		    }
 		});
