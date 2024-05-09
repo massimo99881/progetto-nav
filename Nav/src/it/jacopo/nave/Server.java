@@ -86,45 +86,15 @@ public class Server {
             winner = "navicella2";
             loser = "navicella1";
         } else {
-            sendEndGameMessageToNav("navicella1", "Pareggio! Entrambe le navicelle hanno distrutto lo stesso numero di asteroidi.");
-            sendEndGameMessageToNav("navicella2", "Pareggio! Entrambe le navicelle hanno distrutto lo stesso numero di asteroidi.");
+            sendEndGameMessageToNav("navicella1", "PAREGGIO! Entrambe le navicelle hanno distrutto lo stesso numero di asteroidi.");
+            sendEndGameMessageToNav("navicella2", "PAREGGIO! Entrambe le navicelle hanno distrutto lo stesso numero di asteroidi.");
             return;
         }
 
-        sendEndGameMessageToNav(winner, "Hai vinto per aver distrutto più asteroidi!");
-        sendEndGameMessageToNav(loser, "Hai perso per aver distrutto meno asteroidi.");
+        sendEndGameMessageToNav(winner, "HAI VINTO per aver distrutto più asteroidi!");
+        sendEndGameMessageToNav(loser, "HAI PERSO per aver distrutto meno asteroidi.");
         asteroidsDestroyedCounts.clear(); // Pulisci i conteggi per il prossimo gioco
     }
-
-    
-//    private void checkAsteroidWavesCompletion() {
-//        if (ondataAttuale >= Conf.MAX_ONDATE) {
-//            // Assume che il gioco abbia esattamente due navicelle: navicella1 e navicella2
-//            Nav nav1 = getNavicella("navicella1");
-//            Nav nav2 = getNavicella("navicella2");
-//            
-//            System.out.println("asteroidi nav1 "+nav1.getAsteroidiDistrutti()+ ", "+nav2.getAsteroidiDistrutti());
-//
-//            // Calcola il vincitore e il perdente
-//            String winner, loser;
-//            if (nav1.getAsteroidiDistrutti() > nav2.getAsteroidiDistrutti()) {
-//                winner = "navicella1";
-//                loser = "navicella2";
-//            } else if (nav1.getAsteroidiDistrutti() < nav2.getAsteroidiDistrutti()) {
-//                winner = "navicella2";
-//                loser = "navicella1";
-//            } else {
-//                // In caso di parità, potresti decidere di inviare un messaggio di pareggio
-//            	sendEndGameMessageToNav("navicella1", "Pareggio! Entrambe le navicelle hanno distrutto lo stesso numero di asteroidi.");
-//                sendEndGameMessageToNav("navicella2", "Pareggio! Entrambe le navicelle hanno distrutto lo stesso numero di asteroidi.");
-//                return;
-//            }
-//
-//            // Invia il messaggio di vittoria al vincitore
-//            sendEndGameMessageToNav(winner, "Hai vinto per aver distrutto più asteroidi!");
-//            sendEndGameMessageToNav(loser,"Hai perso per aver distrutto meno asteroidi.");
-//        }
-//    }
 
     public void sendEndGameMessageToNav(String nav, String message) {
         JsonObject jsonMessage = new JsonObject();
@@ -138,27 +108,14 @@ public class Server {
             }
         }
     }
-
-    
-    private void checkAndEndGame(String deceased) {
-        // Increment death count
-        int deaths = destroiedAsteroidsCount.get(deceased) + 1;
-        destroiedAsteroidsCount.put(deceased, deaths);
-
-        // Check if it's the second death
-        if (deaths == 1) {
-            // Determine the winner
-            String winner = deceased.equals("navicella1") ? "navicella2" : "navicella1";
-            sendEndGameMessageToNav(winner, "Hai vinto perché l'altro giocatore è morto");
-        }
-    }
     
     public void processDeath(String playerType) {
         // Logic to process player death
         System.out.println(playerType + " has died.");
 
-        // Update death count and check for game end condition
-        checkAndEndGame(playerType);
+        String winner = playerType.equals("navicella1") ? "navicella2" : "navicella1";
+        sendEndGameMessageToNav(winner, "HAI VINTO! perché l'altro giocatore è stato colpito da un asteroide");
+
     }
 
     

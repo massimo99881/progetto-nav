@@ -49,6 +49,8 @@ import java.util.Timer;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import java.awt.FontMetrics;
+
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -58,7 +60,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	//campi per gestire il repaint a seguito di spostamento della finestra
 	private Point lastWindowPosition = null;
 	private AtomicBoolean isWindowMoving = new AtomicBoolean(false);
-
+	private boolean isFirstPlayerConnected = false;
+	private String statusMessage = "";
 	private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
@@ -77,6 +80,11 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	private JFrame frame;
 	private int currentWave = 0;  // Inizializza la variabile per tenere traccia dell'ondata corrente
 
+	// Timer declarations
+    private javax.swing.Timer gameTimer;
+    private javax.swing.Timer timerSparo;
+    private javax.swing.Timer windowMoveTimer;
+	private String messageDialogEndGame="";
 	
 	public Pannello(JFrame frame) throws IOException {
 		this.frame = frame;
@@ -90,6 +98,11 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    setupTimerGame();
         setupTimerSparo();
         setupWindowMoveTimer();
+	}
+	
+	public void setStatusMessage(String message) {
+	    this.statusMessage = message;
+	    repaint();  // Richiama paintComponent per aggiornare il panel
 	}
 	
 	void precaricaImmagini() {
@@ -139,6 +152,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	
 	private void setupNetworking() throws IOException {
 		try {
+			//socket = new Socket("192.168.1.49", 8086);
             socket = new Socket("127.0.0.1", 8086);
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -154,7 +168,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	
 	private void setupWindowMoveTimer() {
         int checkInterval = 1000; // Intervallo di controllo in millisecondi
-        javax.swing.Timer windowMoveTimer = new javax.swing.Timer(checkInterval, e -> {
+        windowMoveTimer = new javax.swing.Timer(checkInterval, e -> {
             if (frame.getLocation().equals(lastWindowPosition) && isWindowMoving.get()) {
                 endWindowMove();
                 isWindowMoving.set(false);
@@ -186,6 +200,12 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            }
 	        }
 	    }, "Client-Receiver").start();
+	    
+	 // Controlla se è il primo giocatore a connettersi
+	    if (!isFirstPlayerConnected) {
+	        isFirstPlayerConnected = true;
+	        setStatusMessage("In attesa del giocatore 2...");
+	    }
 	}
 	
 	private void scheduleAsteroidTimer(long delay, int seed) {
@@ -244,8 +264,10 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 
         switch (tipo) {
 	        case "gameEnd":
-	            JOptionPane.showMessageDialog(frame, receivedJson.get("message").getAsString(), "Game Over", JOptionPane.INFORMATION_MESSAGE);
-	            // Optionally reset or close the game
+	            String messageDialog = receivedJson.get("message").getAsString();
+		            Nav navicella1 = (Nav) singleton.getObj().get(clientNavicella);
+		            messageDialogEndGame = messageDialog;
+            		stopGame();
 	            break;
 	        case "asteroideDistrutto":
 	            String asteroideName = receivedJson.get("nomeAsteroide").getAsString();
@@ -336,6 +358,33 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
                 break;
         }
     }
+	
+	private void resurrectPlayer() {
+	    gameStopped = false; // Permette al gioco di continuare
+	    Nav navicella = (Nav) singleton.getObj().get(clientNavicella);
+	    if (navicella != null) {
+	        navicella.isVisible = true; // Rende la navicella visibile di nuovo
+	        navicella.resetPosition(); // Resetta la posizione iniziale o sicura
+	        sendVisibilityChange(clientNavicella, true); // Comunica al server che la navicella è di nuovo visibile
+	        startAudio(); // Riavvia l'audio se necessario
+	    }
+	}
+
+	
+	private void stopGame() {
+	    gameStopped = true; // Imposta un flag che indica che il gioco è terminato
+	    javax.swing.Timer[] timers = { gameTimer, timerSparo, windowMoveTimer }; // Array di tutti i timer che potrebbero essere in esecuzione
+	    for (javax.swing.Timer t : timers) {
+	        if (t != null) {
+	            t.stop(); // Ferma i timer
+	        }
+	    }
+	    if (clipAudio != null && clipAudio.isRunning()) {
+	        clipAudio.stop(); // Ferma l'audio del gioco se è in esecuzione
+	    }
+	    repaint(); // Forza un ridisegno dell'interfaccia grafica per pulire o aggiornare lo stato visivo
+	}
+
 	
 	private void removeAsteroid(String asteroideName) {
 		updateLock.lock(); // Acquisisce il lock
@@ -448,7 +497,41 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    }
 
 		super.paintComponent(g);
-	    //System.out.println("Client: Rendering content.");
+		
+		if (gameStopped) {
+			statusMessage = "";
+	        // Imposta il colore e il font per il testo di ringraziamento
+	        g.setColor(Color.GRAY);
+	        g.setFont(new Font("Arial", Font.BOLD, 24));
+
+	        // Centra il messaggio nel pannello
+	        String thankYouMessage = "Grazie per aver giocato!";
+
+	        // Ottieni le metriche dal contesto grafico per centrare il testo
+	        FontMetrics metrics = g.getFontMetrics();
+	        int xThankYou = (getWidth() - metrics.stringWidth(thankYouMessage)) / 2;
+	        int yThankYou = getHeight() / 2;
+
+	        int xName = (getWidth() - metrics.stringWidth(messageDialogEndGame)) / 2;
+	        int yName = yThankYou + metrics.getHeight() + 5;
+
+	        // Disegna le stringhe
+	        g.drawString(thankYouMessage, xThankYou, yThankYou);
+	        g.drawString(messageDialogEndGame, xName, yName);
+
+	        return; // Non eseguire ulteriori disegni dopo il messaggio di fine gioco
+	    }
+		
+		if (!statusMessage.isEmpty()) {
+	        g.setColor(Color.GRAY);
+	        g.setFont(new Font("Arial", Font.BOLD, 16));
+	        // Centra il messaggio nel panel
+	        FontMetrics fm = g.getFontMetrics();
+	        int x = (getWidth() - fm.stringWidth(statusMessage)) / 2;
+	        int y = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
+	        g.drawString(statusMessage, x, y);
+	        
+	    }
 		
 		if (gameStopped || clientNavicella == null || !singleton.getObj().containsKey(clientNavicella)) {
 	        // La navicella non è stata ancora impostata o non è presente nella mappa,
@@ -552,7 +635,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 		    sendPlayerDeath(clientNavicella);
 		    
 		    try {
-		        File fileAudio = new File(Conf._RESOURCES_AUDIO_PATH + "losing.wav"); // Assicurati che il percorso sia corretto
+		        File fileAudio = new File(Conf._RESOURCES_AUDIO_PATH + "losing.wav"); 
 		        AudioInputStream audioStream = AudioSystem.getAudioInputStream(fileAudio);
 		        clipAudio = AudioSystem.getClip();
 		        clipAudio.open(audioStream);
@@ -560,10 +643,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 		    } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
 		        e.printStackTrace();
 		    }
-		    JOptionPane.showMessageDialog(null, "Hai perso! Il gioco verrà riavviato.", "Game Over", JOptionPane.INFORMATION_MESSAGE);
-	        //resetGame(); 
-	        // Riavvia il gioco immediatamente dopo la chiusura del messaggio
-	        return;
+		    messageDialogEndGame = "Hai perso! Ti ha colpito un asteroide.";
+		    return;
 		}
 	}
 	
@@ -745,7 +826,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 
 	private void setupTimerSparo() {
 		// Imposta un intervallo appropriato per la frequenza di sparo
-		javax.swing.Timer timerSparo = new javax.swing.Timer(100, new ActionListener() { 
+		timerSparo = new javax.swing.Timer(100, new ActionListener() { 
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (staSparando) {
@@ -758,7 +839,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 
 	private void setupTimerGame() {
 		// Inizializza e avvia il Timer
-		javax.swing.Timer gameTimer = new javax.swing.Timer(Conf._FPSms, new ActionListener() {
+		gameTimer = new javax.swing.Timer(Conf._FPSms, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 aggiornaGioco(); // Aggiorna lo stato del gioco

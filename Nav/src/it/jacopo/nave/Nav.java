@@ -101,7 +101,12 @@ public class Nav extends Cache{
 //		at2.rotate(angolo);
 //	    g.draw(at2.createTransformedShape(shape));
 	}
-	
+	public void resetPosition() {
+		this.y = Conf.FRAME_HEIGHT/3;
+        this.x = 25;
+	    this.angolo = 1; // Resetta anche l'angolo di partenza
+	}
+
 	
 	Shape getTransf() {
 		AffineTransform at = new AffineTransform();
