@@ -43,7 +43,7 @@ public class Handler implements Runnable {
             	if (updatesSuspended) {
                     continue; // Ignora l'elaborazione mentre gli aggiornamenti sono sospesi
                 }
-                System.out.println("Ricevuto: " + receivedText);
+                //System.out.println("Ricevuto: " + receivedText);
                 JsonObject receivedJson = JsonParser.parseString(receivedText).getAsJsonObject();
                 String tipo = receivedJson.get("tipo").getAsString();
 

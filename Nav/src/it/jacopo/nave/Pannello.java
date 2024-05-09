@@ -220,7 +220,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	}
 	
 	private void handleIncomingMessage(String message) {
-		System.out.println("Pannello\t"+message);
+		//System.out.println("Pannello\t"+message);
         JsonObject receivedJson = JsonParser.parseString(message).getAsJsonObject();
         String tipo = receivedJson.get("tipo").getAsString();
 
@@ -270,8 +270,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            double startX = receivedJson.get("x").getAsDouble();
 	            double startY = receivedJson.get("y").getAsDouble();
 	            double angoloP = receivedJson.get("angolo").getAsDouble();
-	            System.out.println("Pannello:sparo: "+receivedJson);
-	            //Proiettile proiettile = new Proiettile(startX, startY, angoloP);
+	            //System.out.println("Pannello:sparo: "+receivedJson);
 	            if (!mittente.equals(this.clientNavicella)) { // Assicurati che il proiettile non sia della propria navicella
 	                Proiettile proiettile = singleton.getProiettile(startX, startY, angoloP, mittente);
 	                SwingUtilities.invokeLater(() -> proiettili.add(proiettile));
@@ -299,11 +298,11 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            break;
             case "suspendUpdates":
             	isWindowMoving.set(true);
-                System.out.println("Client: Suspend updates, stopping rendering.");
+                //System.out.println("Client: Suspend updates, stopping rendering.");
                 break;
             case "resumeUpdates":
             	isWindowMoving.set(false);
-                System.out.println("Client: Resume updates, enabling rendering.");
+                //System.out.println("Client: Resume updates, enabling rendering.");
                 //repaint();  // Assicura che l'interfaccia venga ridisegnata
                 break;
             default:
@@ -404,12 +403,12 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	protected void paintComponent(Graphics g) {
 		
 		if (isWindowMoving.get()) {
-	        System.out.println("Client: Rendering paused due to window moving.");
+	        //System.out.println("Client: Rendering paused due to window moving.");
 	        return;
 	    }
 
 		super.paintComponent(g);
-	    System.out.println("Client: Rendering content.");
+	    //System.out.println("Client: Rendering content.");
 		
 		if (gameStopped || clientNavicella == null || !singleton.getObj().containsKey(clientNavicella)) {
 	        // La navicella non è stata ancora impostata o non è presente nella mappa,

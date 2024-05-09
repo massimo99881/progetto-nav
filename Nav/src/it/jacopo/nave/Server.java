@@ -201,7 +201,7 @@ public class Server {
                         jsonMessage.addProperty("x", proiettile.getX());
                         jsonMessage.addProperty("y", proiettile.getY());
                         jsonMessage.addProperty("angolo", proiettile.angolo);
-                        System.out.println("GameServer > "+client.getPlayerType()+": "+jsonMessage.toString());
+                        //System.out.println("GameServer > "+client.getPlayerType()+": "+jsonMessage.toString());
                         client.sendMessage(jsonMessage.toString());
                     }
                 }
@@ -212,7 +212,7 @@ public class Server {
     public synchronized void broadcast(String message, String excludePlayerType) {
         for (Handler client : clients) {
             if (!client.getPlayerType().equals(excludePlayerType)) {
-            	System.out.println("GameServer > "+client.getPlayerType()+" :"+message);
+            	//System.out.println("GameServer > "+client.getPlayerType()+" :"+message);
                 client.sendMessage(message);
             }
         }
@@ -221,7 +221,7 @@ public class Server {
     public synchronized void broadcast(String message) {
         for (Handler client : clients) {
             client.sendMessage(message);
-            System.out.println("Server: Broadcasting message to " + client.getPlayerType());
+            //System.out.println("Server: Broadcasting message to " + client.getPlayerType());
         }
     }
 
@@ -276,7 +276,7 @@ public class Server {
         isPaused = true; // Imposta il timer su pausa
         JsonObject jsonMessage = new JsonObject();
         jsonMessage.addProperty("tipo", "suspendUpdates");
-        System.out.println("Server: Sending suspendUpdates to all clients.");
+        //System.out.println("Server: Sending suspendUpdates to all clients.");
         broadcast(jsonMessage.toString());
     }
 
@@ -284,7 +284,7 @@ public class Server {
         isPaused = false; // Riprende il timer
         JsonObject jsonMessage = new JsonObject();
         jsonMessage.addProperty("tipo", "resumeUpdates");
-        System.out.println("Server: Sending resumeUpdates to all clients.");
+        //System.out.println("Server: Sending resumeUpdates to all clients.");
         broadcast(jsonMessage.toString());
     }
 
