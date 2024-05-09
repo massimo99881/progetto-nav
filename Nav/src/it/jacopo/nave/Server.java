@@ -22,9 +22,13 @@ public class Server {
     private final List<Handler> clients = new CopyOnWriteArrayList<>();
     private Singleton singleton = Singleton.getInstance();
     private long ntpTime;
+    
+    private Map<String, Integer> destroiedAsteroidsCount = new HashMap<>();
+    
+    private Timer ondateTimer;
+    private boolean isPaused = false;
     private int ondataAttuale = 0;
     private final int numeroOndate = 5;  // Numero totale di ondate
-    private Map<String, Integer> destroiedAsteroidsCount = new HashMap<>();
 
     public Server() throws IOException {
     	ntpTime = getNtpTime();
@@ -34,6 +38,7 @@ public class Server {
         destroiedAsteroidsCount.put("navicella1", 0);
         destroiedAsteroidsCount.put("navicella2", 0);
         
+        ondateTimer = new Timer();
         programmaOndate();
         
     }
@@ -113,23 +118,24 @@ public class Server {
 
     
     private void programmaOndate() {
-    	Timer ondateTimer = new Timer();
         ondateTimer.schedule(new TimerTask() {
             @Override
             public void run() {
-                try {
-                    if (ondataAttuale < numeroOndate) {
+                if (isPaused) return; // Controlla se il timer è in pausa
+                
+                if (ondataAttuale < numeroOndate) {
+                    try {
                         scheduleAsteroidCreation();
                         ondataAttuale++;
-                    } else {
-                        ondateTimer.cancel();  // Fermare il timer dopo l'ultima ondata
-                        checkAsteroidWavesCompletion();
+                    } catch (IOException e) {
+                        System.err.println("Errore nella programmazione degli asteroidi: " + e.getMessage());
                     }
-                } catch (IOException e) {
-                    System.err.println("Errore nella programmazione degli asteroidi: " + e.getMessage());
+                } else {
+                    ondateTimer.cancel();  // Fermare il timer dopo l'ultima ondata
+                    checkAsteroidWavesCompletion();
                 }
             }
-        }, 0, 30000);  // Schedula una nuova ondata ogni 30 secondi
+        }, 0, 30000); // Schedula una nuova ondata ogni 30 secondi
     }
     
     private long getNtpTime() throws IOException {
@@ -266,14 +272,16 @@ public class Server {
     }
     
  // Metodo nel server per gestire l'inizio e la fine del movimento della finestra
-    public synchronized void handleWindowMoveStart() {
+    public void handleWindowMoveStart() {
+        isPaused = true; // Imposta il timer su pausa
         JsonObject jsonMessage = new JsonObject();
         jsonMessage.addProperty("tipo", "suspendUpdates");
         System.out.println("Server: Sending suspendUpdates to all clients.");
         broadcast(jsonMessage.toString());
     }
 
-    public synchronized void handleWindowMoveEnd() {
+    public void handleWindowMoveEnd() {
+        isPaused = false; // Riprende il timer
         JsonObject jsonMessage = new JsonObject();
         jsonMessage.addProperty("tipo", "resumeUpdates");
         System.out.println("Server: Sending resumeUpdates to all clients.");
