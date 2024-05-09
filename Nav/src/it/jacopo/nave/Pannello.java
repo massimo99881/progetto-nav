@@ -5,6 +5,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.event.ActionEvent;
@@ -31,7 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
-import java.util.TimerTask; 
+import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.imageio.ImageIO;
 import javax.sound.sampled.AudioInputStream;
@@ -51,8 +53,10 @@ import com.google.gson.JsonParser;
 public class Pannello extends JPanel implements KeyListener, MouseMotionListener{
 	
 	private static final long serialVersionUID = 6552850249592897170L;
-	
-	private boolean isWindowMoving ; // Nuovo campo per gestire il blocco del repaint
+	//campi per gestire il repaint a seguito di spostamento della finestra
+	private Point lastWindowPosition = null;
+	private AtomicBoolean isWindowMoving = new AtomicBoolean(false);
+
 	private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
@@ -81,8 +85,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 		setupListeners();
 	    setupTimerGame();
         setupTimerSparo();
-        
-        isWindowMoving = false;
+        setupWindowMoveTimer();
 	}
 	
 	void precaricaImmagini() {
@@ -144,6 +147,20 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	public void send(String message) {
         out.println(message);
     }
+	
+	private void setupWindowMoveTimer() {
+        int checkInterval = 1000; // Intervallo di controllo in millisecondi
+        javax.swing.Timer windowMoveTimer = new javax.swing.Timer(checkInterval, e -> {
+            if (frame.getLocation().equals(lastWindowPosition) && isWindowMoving.get()) {
+                endWindowMove();
+                isWindowMoving.set(false);
+            } else {
+                lastWindowPosition = frame.getLocation();
+            }
+        });
+        windowMoveTimer.start();
+    }
+
 	
 	public void startClient() {
 		boolean running = true; // Flag per controllare il ciclo di ricezione
@@ -281,13 +298,13 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            }
 	            break;
             case "suspendUpdates":
-                isWindowMoving = true;
+            	isWindowMoving.set(true);
                 System.out.println("Client: Suspend updates, stopping rendering.");
                 break;
             case "resumeUpdates":
-                isWindowMoving = false;
+            	isWindowMoving.set(false);
                 System.out.println("Client: Resume updates, enabling rendering.");
-                repaint();  // Assicura che l'interfaccia venga ridisegnata
+                //repaint();  // Assicura che l'interfaccia venga ridisegnata
                 break;
             default:
                 System.err.println("GameClient: Tipo di messaggio sconosciuto: " + tipo);
@@ -379,14 +396,14 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    JsonObject jsonMessage = new JsonObject();
 	    jsonMessage.addProperty("tipo", "windowMoveEnd");
 	    send(jsonMessage.toString());
-	    isWindowMoving = false;
+	    isWindowMoving.set(false);
 	}
 
 	
 	@Override
 	protected void paintComponent(Graphics g) {
 		
-		if (isWindowMoving) {
+		if (isWindowMoving.get()) {
 	        System.out.println("Client: Rendering paused due to window moving.");
 	        return;
 	    }
@@ -703,8 +720,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 		    public void mouseReleased(MouseEvent e) {
 		        if (e.getButton() == MouseEvent.BUTTON1) {
 		            staSparando = false;
+		            isWindowMoving.set(false);
 		            endWindowMove();
-		            isWindowMoving = false;
 		        }
 		    }
 		});
