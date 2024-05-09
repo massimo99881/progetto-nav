@@ -46,12 +46,14 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import java.util.Timer;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 public class Pannello extends JPanel implements KeyListener, MouseMotionListener{
-	
+	private final Lock updateLock = new ReentrantLock();
 	private static final long serialVersionUID = 6552850249592897170L;
 	//campi per gestire il repaint a seguito di spostamento della finestra
 	private Point lastWindowPosition = null;
@@ -245,6 +247,10 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            JOptionPane.showMessageDialog(frame, receivedJson.get("message").getAsString(), "Game Over", JOptionPane.INFORMATION_MESSAGE);
 	            // Optionally reset or close the game
 	            break;
+	        case "asteroideDistrutto":
+	            String asteroideName = receivedJson.get("nomeAsteroide").getAsString();
+	            removeAsteroid(asteroideName);
+	            break;
 	        case "startGame":
 	            startAudio();  // Avvia l'audio quando il gioco inizia
 	            break;
@@ -330,6 +336,20 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
                 break;
         }
     }
+	
+	private void removeAsteroid(String asteroideName) {
+		updateLock.lock(); // Acquisisce il lock
+	    try {
+	        if (singleton.getObj().containsKey(asteroideName)) {
+	            singleton.getObj().remove(asteroideName);
+	            singleton.getNomiAsteroidi().remove(asteroideName);
+	            repaint();  // Richiede il ridisegno del pannello per riflettere le modifiche
+	        }
+	    } finally {
+	        updateLock.unlock(); // Rilascia il lock
+	    }
+	}
+
 	
 	public void sendPlayerPosition(int x, int y, double angolo) {
 	    JsonObject jsonMessage = new JsonObject();
@@ -599,7 +619,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	}
 	
 	public void aggiornaGioco() {
-		
+		updateLock.lock(); // Acquisisce il lock
+		try {
 		// ciclo per ogni proiettile
 	    Iterator<Proiettile> iterProiettili = proiettili.iterator();
 	    while (iterProiettili.hasNext()) {
@@ -658,6 +679,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	 	                        iterObj.remove(); 
 	 	                        // Stampa un messaggio in console
 	 	                        System.out.println(asteroide.name + " è stato distrutto"); 
+	 	                        sendAsteroidDestroyedMessage(asteroide.name);
+	 	                      
 		 	                    if (proiettile.getMittente().equals(clientNavicella)) {
 		 	                          // Ottieni la navicella del client e incrementa il conteggio degli asteroidi distrutti
 		 	                          Nav navicella = (Nav) singleton.getObj().get(clientNavicella);
@@ -696,7 +719,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	 	                    	// Rimuovi l'asteroide se è stato distrutto
 	 	                        iterObj.remove(); 
 	 	                        // Stampa un messaggio in console
-	 	                        System.out.println(asteroide.name + " è stato distrutto"); 
+	 	                        System.out.println(asteroide.name + " è stato distrutto");
+	 	                        sendAsteroidDestroyedMessage(asteroide.name);
 	 	                    }
 	 	                    // Esci dal ciclo se una collisione è stata trovata
 	 	                    break; 
@@ -705,8 +729,19 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            }
 	        }
 	    }
-
+		}
+		finally {
+			updateLock.unlock(); // Rilascia il lock
+		}
 	}
+	
+	private void sendAsteroidDestroyedMessage(String asteroideName) {
+	    JsonObject jsonMessage = new JsonObject();
+	    jsonMessage.addProperty("tipo", "asteroideDistrutto");
+	    jsonMessage.addProperty("nomeAsteroide", asteroideName);
+	    send(jsonMessage.toString());
+	}
+
 
 	private void setupTimerSparo() {
 		// Imposta un intervallo appropriato per la frequenza di sparo

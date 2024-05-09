@@ -40,6 +40,19 @@ public class Server {
         
     }
     
+    void broadcastAsteroidDestruction(String asteroideName, String excludePlayerType) {
+        JsonObject jsonMessage = new JsonObject();
+        jsonMessage.addProperty("tipo", "asteroideDistrutto");
+        jsonMessage.addProperty("nomeAsteroide", asteroideName);
+        String message = jsonMessage.toString();
+        for (Handler client : clients) {
+            if (!client.getPlayerType().equals(excludePlayerType)) {
+                client.sendMessage(message);
+            }
+        }
+    }
+
+    
     public Nav getNavicella(String playerType) {
         for (Handler client : clients) {
             if (client.getPlayerType().equals(playerType)) {

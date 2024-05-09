@@ -58,6 +58,10 @@ public class Handler implements Runnable {
                         // Broadcast del messaggio agli altri client
                         server.broadcast(receivedText, this.playerType);
                         break;
+                    case "asteroideDistrutto":
+                        String asteroideName = receivedJson.get("nomeAsteroide").getAsString();
+                        server.broadcastAsteroidDestruction(asteroideName, playerType);
+                        break;
                     case "reportAsteroidsDestroyed":
                         int count = receivedJson.get("count").getAsInt();
                         server.receiveAsteroidsDestroyedReport(playerType, count);
@@ -91,6 +95,8 @@ public class Handler implements Runnable {
             cleanup();
         }
     }
+    
+    
     
     public void suspendUpdates() {
         updatesSuspended = true;
