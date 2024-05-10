@@ -10,7 +10,9 @@ import com.google.gson.JsonObject;
 
 public class Proiettile  {
 	private static long nextId = 0; // Contatore statico globale
-    
+	public static final int WIDTH = 5;  // Larghezza standard del proiettile
+    public static final int HEIGHT = 5; // Altezza standard del proiettile
+
 	private long id;
     double x, y; // Posizione del proiettile
     String mittente; //owner (chi ha sparato , es. Navicella1)
@@ -38,7 +40,7 @@ public class Proiettile  {
         Color originalColor = g.getColor(); // Memorizza il colore originale
         try {
             g.setColor(Color.WHITE);
-            g.fillOval((int)x, (int)y, 5, 5); // Disegna un piccolo cerchio come proiettile
+            g.fillOval((int)x, (int)y, WIDTH, HEIGHT); // Disegna un piccolo cerchio come proiettile
         } finally {
             g.setColor(originalColor); // Reimposta il colore originale
         }
@@ -48,13 +50,13 @@ public class Proiettile  {
     // Metodo che restituisce la Shape del proiettile per il rilevamento delle collisioni
     public Shape getShape() {
         // Assumendo che il proiettile sia rappresentato come un cerchio di diametro 5
-        return new Ellipse2D.Double(x, y, 5, 5);
+        return new Ellipse2D.Double(x, y, WIDTH, HEIGHT);
     }
     
  // Metodo per ottenere il bounding box del proiettile
     public Rectangle getBounds() {
         // La dimensione del proiettile è 5x5, quindi il rettangolo avrà le stesse dimensioni
-        return new Rectangle((int)x, (int)y, 5, 5);
+        return new Rectangle((int)x, (int)y, WIDTH, HEIGHT);
     }
     
     public void reset(double x, double y, double angolo, String mittente) {

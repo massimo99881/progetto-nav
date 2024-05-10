@@ -298,7 +298,11 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            break;
 	        case "asteroideDistrutto":
 	            String asteroideName = receivedJson.get("nomeAsteroide").getAsString();
+	            String destroyer = receivedJson.get("mittente").getAsString(); 
 	            removeAsteroid(asteroideName);
+	            if (destroyer.equals(this.clientNavicella)) {
+	                incrementCounter(destroyer);
+	            }
 	            break;
 	        case "startGame":
 	            startAudio();  // Avvia l'audio quando il gioco inizia
@@ -316,6 +320,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
                 this.clientNavicella = playerType;
                 if (frame != null) {
                     frame.setTitle("Navicella: " + playerType);
+                    System.out.println("CLIENT: "+playerType);
                 }
                 break;
             case "startAsteroidi":
@@ -327,7 +332,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
             	break;
             case "updateWave":
                 currentWave = receivedJson.get("ondataAttuale").getAsInt();
-                System.out.println("Wave updated to: " + currentWave);
+                //System.out.println("Wave updated to: " + currentWave);
                 break;
             case "posizione":
                 String nomeNavicella = receivedJson.get("nome").getAsString();
@@ -383,6 +388,18 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
                 break;
         }
     }
+	
+	private void incrementCounter(String destroyer) {
+	    // Incrementa solo se il distruttore è il client stesso
+	    if (destroyer.equals(clientNavicella)) {
+	        Nav navicella = (Nav) singleton.getObj().get(clientNavicella);
+	        if (navicella != null) {
+	            //navicella.incrementaAsteroidiDistrutti(clientNavicella);  // Chiama il metodo per incrementare il contatore
+	            repaint();  // Richiede il ridisegno per aggiornare l'interfaccia grafica
+	        }
+	    }
+	}
+
 	
 	private void resurrectPlayer() {
 	    gameStopped = false; // Permette al gioco di continuare
@@ -808,14 +825,17 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	 	                    	// Rimuovi l'asteroide se è stato distrutto
 	 	                        iterObj.remove(); 
 	 	                        // Stampa un messaggio in console
-	 	                        System.out.println(asteroide.name + " è stato distrutto"); 
+	 	                       System.out.println("[LON]" + asteroide.name + " è stato distrutto da "+proiettile.getMittente());
 	 	                        sendAsteroidDestroyedMessage(asteroide.name);
-	 	                      
+	 	                       
 		 	                    if (proiettile.getMittente().equals(clientNavicella)) {
+		 	                    	
 		 	                          // Ottieni la navicella del client e incrementa il conteggio degli asteroidi distrutti
 		 	                          Nav navicella = (Nav) singleton.getObj().get(clientNavicella);
 		 	                          if (navicella != null) {
-		 	                              navicella.incrementaAsteroidiDistrutti();
+		 	                              navicella.incrementaAsteroidiDistrutti(clientNavicella);
+		 	                             singleton.getObj().put(clientNavicella, navicella);
+		 	                             repaint();
 		 	                          }
 		 	                    }
 	 	                       
@@ -849,8 +869,18 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	 	                    	// Rimuovi l'asteroide se è stato distrutto
 	 	                        iterObj.remove(); 
 	 	                        // Stampa un messaggio in console
-	 	                        System.out.println(asteroide.name + " è stato distrutto");
+	 	                        System.out.println("[VIC]" + asteroide.name + " è stato distrutto da "+proiettile.getMittente());
 	 	                        sendAsteroidDestroyedMessage(asteroide.name);
+	 	                        
+	 	                       if (proiettile.getMittente().equals(clientNavicella)) {
+		 	                          // Ottieni la navicella del client e incrementa il conteggio degli asteroidi distrutti
+		 	                          Nav navicella = (Nav) singleton.getObj().get(clientNavicella);
+		 	                          if (navicella != null) {
+		 	                              navicella.incrementaAsteroidiDistrutti(clientNavicella);
+		 	                             singleton.getObj().put(clientNavicella, navicella);
+		 	                            repaint();
+		 	                          }
+		 	                    }
 	 	                    }
 	 	                    // Esci dal ciclo se una collisione è stata trovata
 	 	                    break; 

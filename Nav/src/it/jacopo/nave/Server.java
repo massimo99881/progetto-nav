@@ -1,5 +1,7 @@
 package it.jacopo.nave;
 
+import java.awt.Rectangle;
+import java.awt.geom.Area;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -35,19 +37,19 @@ public class Server {
     	ntpTime = getNtpTime();
         serverSocket = new ServerSocket(8086);
         System.out.println("Server avviato sulla porta 8086");
-        ondateTimer = new Timer();
-        programmaOndate();
+        
         
     }
     
-    void broadcastAsteroidDestruction(String asteroideName, String excludePlayerType) {
+    void broadcastAsteroidDestruction(String asteroideName, String destroyer) {
         JsonObject jsonMessage = new JsonObject();
         jsonMessage.addProperty("tipo", "asteroideDistrutto");
         jsonMessage.addProperty("nomeAsteroide", asteroideName);
-        String message = jsonMessage.toString();
+        jsonMessage.addProperty("mittente", destroyer);  // Aggiungi chi ha distrutto l'asteroide
+
         for (Handler client : clients) {
-            if (!client.getPlayerType().equals(excludePlayerType)) {
-                client.sendMessage(message);
+            if (client.getPlayerType().equals(destroyer)) {
+                client.sendMessage(jsonMessage.toString());
             }
         }
     }
@@ -212,33 +214,87 @@ public class Server {
     }
     
     private void inviaAggiornamentiProiettili() {
-    	List<Proiettile> proiettiliAttivi = singleton.getActiveProiettili();
-    	Iterator<Proiettile> iterator = proiettiliAttivi.iterator();
+        List<Proiettile> proiettiliAttivi = singleton.getActiveProiettili();
+        Iterator<Proiettile> iterator = proiettiliAttivi.iterator();
         while (iterator.hasNext()) {
             Proiettile proiettile = iterator.next();
             proiettile.aggiorna();
 
             if (!proiettileValido(proiettile)) {
-            	iterator.remove();  // Rimuovi il proiettile dalla lista dei proiettili attivi
-            	singleton.releaseProiettile(proiettile);  // Restituisci il proiettile al pool
+                iterator.remove();
+                singleton.releaseProiettile(proiettile);
             } else {
-            	// Invia aggiornamenti a tutti i clienti tranne al mittente del proiettile
-                for (Handler client : clients) {
-                    if (!client.getPlayerType().equals(proiettile.getMittente())) {
-                    	
-                    	JsonObject jsonMessage = new JsonObject();
-                        jsonMessage.addProperty("tipo", "sparo");
-                        jsonMessage.addProperty("mittente", proiettile.getMittente());
-                        jsonMessage.addProperty("x", proiettile.getX());
-                        jsonMessage.addProperty("y", proiettile.getY());
-                        jsonMessage.addProperty("angolo", proiettile.angolo);
-                        //System.out.println("GameServer > "+client.getPlayerType()+": "+jsonMessage.toString());
-                        client.sendMessage(jsonMessage.toString());
+                Asteroide asteroide = checkCollision(proiettile);
+                if (asteroide != null) {
+                    broadcastAsteroidDestruction(asteroide.getName(), proiettile.getMittente());
+                    // Incrementa solo il contatore per il mittente che ha distrutto l'asteroide
+                    for (Handler client : clients) {
+                        if (client.getPlayerType().equals(proiettile.getMittente())) {
+                            //client.getNavicella().incrementaAsteroidiDistrutti(proiettile.getMittente());
+                            break; // Interrompe il ciclo una volta trovato e aggiornato il mittente corretto
+                        }
+                    }
+                }
+
+                // Invia aggiornamenti di posizione del proiettile a tutti tranne al mittente
+                broadcastProjectileUpdate(proiettile);
+            }
+        }
+    }
+
+    
+    private void broadcastProjectileUpdate(Proiettile proiettile) {
+        JsonObject jsonMessage = new JsonObject();
+        jsonMessage.addProperty("tipo", "aggiornamentoProiettile");
+        jsonMessage.addProperty("mittente", proiettile.getMittente());
+        jsonMessage.addProperty("x", proiettile.getX());
+        jsonMessage.addProperty("y", proiettile.getY());
+        jsonMessage.addProperty("angolo", proiettile.angolo);
+
+        // Invia il messaggio a tutti tranne al mittente del proiettile
+        for (Handler client : clients) {
+            if (!client.getPlayerType().equals(proiettile.getMittente())) {
+                client.sendMessage(jsonMessage.toString());
+            }
+        }
+    }
+
+
+    
+    private Asteroide checkCollision(Proiettile proiettile) {
+        // Cicla attraverso tutti gli asteroidi attivi nel gioco
+        for (Map.Entry<String, Cache> entry : singleton.getObj().entrySet()) {
+            if (entry.getValue() instanceof Asteroide) {
+                Asteroide asteroide = (Asteroide) entry.getValue();
+                
+                // Calcola le bounding box per asteroide e proiettile
+                Rectangle asteroideBounds = asteroide.getBounds();
+                Rectangle proiettileBounds = new Rectangle(
+                    (int) proiettile.getX(), 
+                    (int) proiettile.getY(), 
+                    Proiettile.WIDTH, 
+                    Proiettile.HEIGHT
+                );
+
+                // Controlla se le bounding box si intersecano
+                if (asteroideBounds.intersects(proiettileBounds)) {
+                    // Verifica più accurata con le shape se necessario
+                    Area areaAsteroide = new Area(asteroide.getTransf());
+                    Area areaProiettile = new Area(proiettile.getShape());
+                    areaAsteroide.intersect(areaProiettile);
+                    
+                    if (!areaAsteroide.isEmpty()) {
+                        // Collisione confermata, ritorna l'asteroide colpito
+                        return asteroide;
                     }
                 }
             }
         }
+        
+        // Nessuna collisione trovata, ritorna null
+        return null;
     }
+
     
     public synchronized void broadcast(String message, String excludePlayerType) {
         for (Handler client : clients) {
@@ -283,7 +339,8 @@ public class Server {
                 if(playerCount==2) {
                 	
                 	startGame();  // Avvia il gioco quando entrambi i giocatori sono connessi
-                	scheduleAsteroidCreation();
+                	ondateTimer = new Timer();
+                    programmaOndate();
                 	
             	    for(Handler h : clients) {
             	    	new Thread(h).start();

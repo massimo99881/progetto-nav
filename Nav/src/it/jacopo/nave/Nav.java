@@ -131,8 +131,12 @@ public class Nav extends Cache{
 	    return getTransf().getBounds();
 	}
 	
-	public void incrementaAsteroidiDistrutti() {
-        asteroidiDistrutti++;
+	public void incrementaAsteroidiDistrutti(String mittente) {
+		//System.out.println("]]]]]]nome: "+nome);
+        if (this.nome.equals(mittente)) {
+            asteroidiDistrutti++;
+            //System.out.println("]]]]]]nome: " + nome + " ne ha distrutti " + asteroidiDistrutti);
+        }
     }
 
     public int getAsteroidiDistrutti() {

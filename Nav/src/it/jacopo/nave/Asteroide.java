@@ -7,16 +7,11 @@ import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
-
-import javax.imageio.ImageIO;
 
 public class Asteroide extends Cache {
+	
+	public static long id=0;
     Image image;
     double angoloRotazione; // Angolo di rotazione per la rotazione casuale
     final double ANGLE_BASE ;
@@ -28,7 +23,6 @@ public class Asteroide extends Cache {
     
     private AffineTransform cachedTransform;
     private double prevX, prevY, prevAngoloRotazione;
-    private Pannello pannello; // Riferimento al pannello
     String name;
 	Polygon shape;
 	double speed;
@@ -58,7 +52,6 @@ public class Asteroide extends Cache {
 
     public Asteroide(Pannello pan, String nome, String imagePath) {
     	super();
-    	this.pannello = pan;
     	this.name=nome;
     	this.immaginePath = imagePath;
     	Map<String, Cache> imageCache = Singleton.getInstance().getImageCache();
@@ -67,7 +60,7 @@ public class Asteroide extends Cache {
         this.speed = 5.0 + 0.2 * 4.0; // Velocità casuale da 2.0 a 5.0
         shape = imageCache.get(imagePath).getPolygon();
         angoloRotazione = (0.2 * 2 - 1) * Math.PI / 180;
-        
+        this.id = ++id;
         this.raggio = Math.min(this.image.getWidth(null), this.image.getHeight(null)) / 2;
     }
 
