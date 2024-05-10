@@ -117,6 +117,24 @@ public class Server {
         sendEndGameMessageToNav(winner, "HAI VINTO! perché l'altro giocatore è stato colpito da un asteroide");
 
     }
+    
+    public synchronized void broadcastPosition(String senderPlayerType, int x, int y, double angolo, boolean isEngineOn) {
+        JsonObject jsonMessage = new JsonObject();
+        jsonMessage.addProperty("tipo", "posizione");
+        jsonMessage.addProperty("nome", senderPlayerType);
+        jsonMessage.addProperty("x", x);
+        jsonMessage.addProperty("y", y);
+        jsonMessage.addProperty("angolo", angolo);
+        jsonMessage.addProperty("isEngineOn", isEngineOn);
+
+        String message = jsonMessage.toString();
+        for (Handler client : clients) {
+            if (!client.getPlayerType().equals(senderPlayerType)) {  // Non inviare il messaggio al mittente originale
+                client.sendMessage(message);
+            }
+        }
+    }
+
 
     
     private void programmaOndate() {

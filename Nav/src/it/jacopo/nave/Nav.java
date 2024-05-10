@@ -24,6 +24,7 @@ public class Nav extends Cache{
 	int x, y;
 	boolean isVisible;
 	private int asteroidiDistrutti = 0;
+	boolean isEngineOn = false;
 	
 	public Nav(String nome) {
 		super();
@@ -62,6 +63,9 @@ public class Nav extends Cache{
         }
 	}
 	
+	public void update() {
+        isEngineOn = speed > 0.1; // Se la velocità è maggiore di un certo valore, considera il motore acceso
+    }
 	
 	void draw(Graphics2D g) {
 		if (!isVisible) {
@@ -72,12 +76,21 @@ public class Nav extends Cache{
 	    // Imposta lo spessore del contorno
 	    //g.setStroke(new BasicStroke(3));
 	    
-		// Decide quale immagine usare basandosi sulla velocità
-	    if (Math.abs(speed) < 0.5) { // Considera la navicella ferma se la velocità è vicina a 0
-	        imageToDraw = navImageSpenta; 
+		BufferedImage imageToDraw;
+	    if (isEngineOn) {
+	    	imageToDraw = navImageAccesa; // Immagine con fuoco
 	    } else {
-	        imageToDraw = navImageAccesa;
+	    	imageToDraw = navImageSpenta; // Immagine senza fuoco
 	    }
+		
+		// Decide quale immagine usare basandosi sulla velocità
+//	    if (Math.abs(speed) < 0.5) { // Considera la navicella ferma se la velocità è vicina a 0
+//	        imageToDraw = navImageSpenta; 
+//	        isEngineOn = false;
+//	    } else {
+//	        imageToDraw = navImageAccesa;
+//	        isEngineOn = true;
+//	    }
 	    
 	    int imageWidth = imageToDraw.getWidth();
 	    int imageHeight = imageToDraw.getHeight();

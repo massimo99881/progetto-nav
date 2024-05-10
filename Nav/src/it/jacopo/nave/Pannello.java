@@ -303,16 +303,14 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
                 System.out.println("Wave updated to: " + currentWave);
                 break;
             case "posizione":
-	            // Estrai il nome della navicella e le coordinate dal messaggio
-	            String nomeNavicella = receivedJson.get("nome").getAsString();
-	            int x = receivedJson.get("x").getAsInt();
-	            int y = receivedJson.get("y").getAsInt();
-	            double angolo = receivedJson.get("angolo").getAsDouble();
-	            if (!nomeNavicella.equals(this.clientNavicella)) {
-	                // Aggiorna la posizione della navicella avversaria
-	            	updateShipPosition(nomeNavicella, x, y, angolo);
-	            }
-	            break;
+                String nomeNavicella = receivedJson.get("nome").getAsString();
+                int x = receivedJson.get("x").getAsInt();
+                int y = receivedJson.get("y").getAsInt();
+                double angolo = receivedJson.get("angolo").getAsDouble();
+                boolean isEngineOn = receivedJson.get("isEngineOn").getAsBoolean();
+                updateShipPosition(nomeNavicella, x, y, angolo, isEngineOn);
+                break;
+
             case "sparo":
 	        	String mittente = receivedJson.get("mittente").getAsString();
 	            double startX = receivedJson.get("x").getAsDouble();
@@ -400,21 +398,43 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	}
 
 	
-	public void sendPlayerPosition(int x, int y, double angolo) {
+//	public void sendPlayerPosition(int x, int y, double angolo) {
+//	    JsonObject jsonMessage = new JsonObject();
+//	    jsonMessage.addProperty("tipo", "posizione");
+//	    jsonMessage.addProperty("nome", clientNavicella);
+//	    jsonMessage.addProperty("x", x);
+//	    jsonMessage.addProperty("y", y);
+//	    jsonMessage.addProperty("angolo", angolo); 
+//	    send(jsonMessage.toString());
+//	}
+	
+//	public void sendPlayerPosition(int x, int y, double angolo) {
+//	    Nav nave = (Nav) singleton.getObj().get(clientNavicella);
+//	    JsonObject jsonMessage = new JsonObject();
+//	    jsonMessage.addProperty("tipo", "posizione");
+//	    jsonMessage.addProperty("nome", clientNavicella);
+//	    jsonMessage.addProperty("x", x);
+//	    jsonMessage.addProperty("y", y);
+//	    jsonMessage.addProperty("angolo", angolo);
+//	    jsonMessage.addProperty("isEngineOn", nave.isEngineOn); // Aggiungi lo stato del motore
+//	    send(jsonMessage.toString());
+//	}
+	
+	public void sendPlayerPosition(int x, int y, double angolo, boolean isEngineOn) {
 	    JsonObject jsonMessage = new JsonObject();
 	    jsonMessage.addProperty("tipo", "posizione");
 	    jsonMessage.addProperty("nome", clientNavicella);
 	    jsonMessage.addProperty("x", x);
 	    jsonMessage.addProperty("y", y);
-	    jsonMessage.addProperty("angolo", angolo); // Aggiungi l'angolo
+	    jsonMessage.addProperty("angolo", angolo);
+	    jsonMessage.addProperty("isEngineOn", isEngineOn); // Aggiungi lo stato del motore
 	    send(jsonMessage.toString());
 	}
 
-	public void updateShipPosition(String nomeNavicella, int x, int y, double angolo) {
-	    // Cerca la navicella specificata nella mappa degli oggetti di gioco
-		Map<String, Cache> obj = singleton.getObj();
-	    Nav navicella = (Nav) obj.get(nomeNavicella);
 
+
+	public void updateShipPosition(String nomeNavicella, int x, int y, double angolo, boolean isEngineOn) {
+		Nav navicella = (Nav) singleton.getObj().get(nomeNavicella);
 	    // Se la navicella esiste, verifica se la posizione o l'angolo sono cambiati
 	    if (navicella != null) {
 	        // Controlla se ci sono stati cambiamenti significativi
@@ -426,7 +446,9 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	            navicella.x = x;
 	            navicella.y = y;
 	            navicella.angolo = angolo;
+	            
 	        }
+	        navicella.isEngineOn = isEngineOn;
 	    } else {
 	        System.err.println("Navicella non trovata: " + nomeNavicella);
 	    }
@@ -901,13 +923,20 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        if (!isInCollision) {
 	        	Nav nave = (Nav) singleton.getObj().get(clientNavicella);
 	            nave.speed += 10;
-	            sendPlayerPosition(nave.x, nave.y, nave.angolo);
+	            nave.isEngineOn = true;
+	            sendPlayerPosition(nave.x, nave.y, nave.angolo, nave.isEngineOn);
 	        }
 	    }
 	}
 
 	@Override
-	public void keyReleased(KeyEvent e) {}
+	public void keyReleased(KeyEvent e) {
+		if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+	        Nav nave = (Nav) singleton.getObj().get(clientNavicella);
+	        nave.isEngineOn = false; // Spegni il motore quando il tasto viene rilasciato
+	        sendPlayerPosition(nave.x, nave.y, nave.angolo, nave.isEngineOn);
+	    }
+	}
 	@Override
 	public void mouseDragged(MouseEvent e) {
 		if (staSparando) {
@@ -918,7 +947,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
                 nave.angolo = angleToMouse;
                 spara(); 
                 
-                sendPlayerPosition(nave.x, nave.y, nave.angolo);
+                sendPlayerPosition(nave.x, nave.y, nave.angolo, nave.isEngineOn);
             }
         }
 	}
@@ -931,7 +960,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        cy = e.getY();
 	        double angolo = Math.atan2(e.getY() - nave.y, e.getX() - nave.x);
 	        nave.angolo = angolo;
-	        sendPlayerPosition(nave.x, nave.y, nave.angolo);
+	        sendPlayerPosition(nave.x, nave.y, nave.angolo, nave.isEngineOn);
 	    }
 	}
 	

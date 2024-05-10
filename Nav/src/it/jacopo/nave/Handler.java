@@ -51,9 +51,16 @@ public class Handler implements Runnable {
 	                case "startAsteroidi":
 	                case "asteroide":
 	                case "sparo":
-                    case "posizione":
+                    
                     	server.broadcast(receivedText);
                         break;
+	                case "posizione":
+	                    int x = receivedJson.get("x").getAsInt();
+	                    int y = receivedJson.get("y").getAsInt();
+	                    double angolo = receivedJson.get("angolo").getAsDouble();
+	                    boolean isEngineOn = receivedJson.get("isEngineOn").getAsBoolean();
+	                    server.broadcastPosition(playerType, x, y, angolo, isEngineOn);
+	                    break;
                     case "aggiornamentoVisibilita":
                         // Broadcast del messaggio agli altri client
                         server.broadcast(receivedText, this.playerType);
