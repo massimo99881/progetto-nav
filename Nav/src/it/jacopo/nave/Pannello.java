@@ -84,6 +84,8 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
     private javax.swing.Timer gameTimer;
     private javax.swing.Timer timerSparo;
     private javax.swing.Timer windowMoveTimer;
+    private javax.swing.Timer positionUpdateTimer;
+
 	private String messageDialogEndGame="";
 	
 	public Pannello(JFrame frame) throws IOException {
@@ -98,8 +100,33 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    setupTimerGame();
         setupTimerSparo();
         setupWindowMoveTimer();
+        setupPositionUpdateTimer();
 	}
 	
+	private void setupPositionUpdateTimer() {
+	    int delay = 100; // Tempo in millisecondi tra ogni invio
+	    positionUpdateTimer = new javax.swing.Timer(delay, e -> sendPlayerPosition());
+	    positionUpdateTimer.start();
+	}
+	
+	public void sendPlayerPosition() {
+	    if (clientNavicella == null || !singleton.getObj().containsKey(clientNavicella)) {
+	        return;
+	    }
+	    Nav navicella = (Nav) singleton.getObj().get(clientNavicella);
+	    if (navicella != null) {
+	        JsonObject jsonMessage = new JsonObject();
+	        jsonMessage.addProperty("tipo", "posizione");
+	        jsonMessage.addProperty("nome", clientNavicella);
+	        jsonMessage.addProperty("x", navicella.x);
+	        jsonMessage.addProperty("y", navicella.y);
+	        jsonMessage.addProperty("angolo", navicella.angolo);
+	        jsonMessage.addProperty("isEngineOn", navicella.isEngineOn);
+	        send(jsonMessage.toString());
+	    }
+	}
+
+
 	public void setStatusMessage(String message) {
 	    this.statusMessage = message;
 	    repaint();  // Richiama paintComponent per aggiornare il panel

@@ -134,6 +134,11 @@ Talvolta alcuni messaggi possono andare persi. Ciò può portare all'effetto ind
 E' stato quindi introdotto un semaforo per la gestione dell'invio di aggiornamenti da parte dei client verso il server ogni qualvolta essi distruggono un asteroide . Questo messaggio si è reso necessario in quanto a causa di messaggi persi, c'erano degli asteroidi che si continuavano a vedere anche dopo che l'altro client li aveva distrutti.
 Il semaforo nei client è blocca momentaneamente il metodo aggiornaGioco (che fa rendering e che lavora sulla lista di asteroidi) quando si riceve la comunicazione dal server di un asteroide distrutto da un altro client.
 
+
+CASO: se si preme una sola volta e in un punto nello spazio il tasto spaziatrice e non muovo il mouse, la rappresentazione della mia navicella rimaneva leggermente più indietro nella visualizzazione dell'altro client. 
+
+Per risolvere questo problema si è deciso di inserire un timer nel client che invii periodicamente la posizione e altri dati rilevanti della navicella al server . Questa soluzione ha permesso di mantenere sincronizzati tutti i client con lo stato attuale del gioco. Questo approccio è comunemente utilizzato nei giochi multiplayer online per assicurare che tutti i giocatori vedano uno stato di gioco coerente e aggiornato.
+
 ## Requisiti di Sistema
 - Java Runtime Environment 8 o superiore
 - Risoluzione schermo consigliata: 1280x720
