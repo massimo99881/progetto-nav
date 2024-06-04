@@ -203,46 +203,6 @@ public class Server {
         System.out.println("Client disconnesso: " + clientHandler.getPlayerType());
     }
     
-    private void iniziaTimerAggiornamentiProiettili() {
-    	Timer timerAggiornamentoProiettili = new Timer(true);
-        timerAggiornamentoProiettili.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                inviaAggiornamentiProiettili();
-            }
-        }, 0, 100); 
-    }
-    
-    private void inviaAggiornamentiProiettili() {
-        List<Proiettile> proiettiliAttivi = singleton.getActiveProiettili();
-        Iterator<Proiettile> iterator = proiettiliAttivi.iterator();
-        while (iterator.hasNext()) {
-            Proiettile proiettile = iterator.next();
-            proiettile.aggiorna();
-
-            if (!proiettileValido(proiettile)) {
-                iterator.remove();
-                singleton.releaseProiettile(proiettile);
-            } else {
-                Asteroide asteroide = checkCollision(proiettile);
-                if (asteroide != null) {
-                    broadcastAsteroidDestruction(asteroide.getName(), proiettile.getMittente());
-                    // Incrementa solo il contatore per il mittente che ha distrutto l'asteroide
-                    for (Handler client : clients) {
-                        if (client.getPlayerType().equals(proiettile.getMittente())) {
-                            //client.getNavicella().incrementaAsteroidiDistrutti(proiettile.getMittente());
-                            break; // Interrompe il ciclo una volta trovato e aggiornato il mittente corretto
-                        }
-                    }
-                }
-
-                // Invia aggiornamenti di posizione del proiettile a tutti tranne al mittente
-                broadcastProjectileUpdate(proiettile);
-            }
-        }
-    }
-
-    
     private void broadcastProjectileUpdate(Proiettile proiettile) {
         JsonObject jsonMessage = new JsonObject();
         jsonMessage.addProperty("tipo", "aggiornamentoProiettile");
@@ -258,8 +218,6 @@ public class Server {
             }
         }
     }
-
-
     
     private Asteroide checkCollision(Proiettile proiettile) {
         // Cicla attraverso tutti gli asteroidi attivi nel gioco
@@ -345,9 +303,6 @@ public class Server {
             	    for(Handler h : clients) {
             	    	new Thread(h).start();
             	    }
-            	    
-            	    
-            	    iniziaTimerAggiornamentiProiettili();
                 }
                 else {
                 	System.out.println("In attesa secondo giocatore...");
