@@ -307,14 +307,7 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        case "startGame":
 	            startAudio();  // Avvia l'audio quando il gioco inizia
 	            break;
-	        case "aggiornamentoVisibilita":
-	            String navicellaName = receivedJson.get("navicella").getAsString();
-	            boolean isVisible = receivedJson.get("isVisible").getAsBoolean();
-	            Nav navicella = (Nav) singleton.getObj().get(navicellaName);
-	            if (navicella != null) {
-	                navicella.isVisible = isVisible;
-	            }
-	            break;
+	        
             case "tipoNavicella":
                 playerType = receivedJson.get("navicella").getAsString();
                 this.clientNavicella = playerType;
@@ -399,19 +392,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	        }
 	    }
 	}
-
-	
-	private void resurrectPlayer() {
-	    gameStopped = false; // Permette al gioco di continuare
-	    Nav navicella = (Nav) singleton.getObj().get(clientNavicella);
-	    if (navicella != null) {
-	        navicella.isVisible = true; // Rende la navicella visibile di nuovo
-	        navicella.resetPosition(); // Resetta la posizione iniziale o sicura
-	        sendVisibilityChange(clientNavicella, true); // Comunica al server che la navicella è di nuovo visibile
-	        startAudio(); // Riavvia l'audio se necessario
-	    }
-	}
-
 	
 	private void stopGame() {
 	    gameStopped = true; // Imposta un flag che indica che il gioco è terminato
@@ -721,14 +701,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 	    send(jsonMessage.toString());
 	}
 	
-	public void sendVisibilityChange(String navicellaName, boolean isVisible) {
-	    JsonObject jsonMessage = new JsonObject();
-	    jsonMessage.addProperty("tipo", "aggiornamentoVisibilita");
-	    jsonMessage.addProperty("navicella", navicellaName);
-	    jsonMessage.addProperty("isVisible", isVisible);
-	    send(jsonMessage.toString());
-	}
-
 	private void controllaCollisioneNavCursore() {
 		if (clientNavicella == null || !singleton.getObj().containsKey(clientNavicella)) {
 	        // La navicella non è stata ancora impostata o non è presente nella mappa,

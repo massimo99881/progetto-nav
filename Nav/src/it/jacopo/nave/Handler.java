@@ -61,10 +61,6 @@ public class Handler implements Runnable {
 	                    boolean isEngineOn = receivedJson.get("isEngineOn").getAsBoolean();
 	                    server.broadcastPosition(playerType, x, y, angolo, isEngineOn);
 	                    break;
-                    case "aggiornamentoVisibilita":
-                        // Broadcast del messaggio agli altri client
-                        server.broadcast(receivedText, this.playerType);
-                        break;
                     //invio aggiornamento per ogni asteroide che viene distrutto
                     case "asteroideDistrutto":
                         String asteroideName = receivedJson.get("nomeAsteroide").getAsString();
