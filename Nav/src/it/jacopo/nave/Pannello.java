@@ -675,7 +675,6 @@ public class Pannello extends JPanel implements KeyListener, MouseMotionListener
 		if (!areaNav.isEmpty()) {
 		    System.out.println( "Collisione avvenuta! Gioco terminato.");
 		    navicella1.isVisible = false;  // Imposta la navicella come non visibile
-		    sendVisibilityChange(navicella1.nome, false);  // Invia aggiornamenti ai client
 		    gameStopped = true; 
 		    clipAudio.stop();
 		    sendPlayerDeath(clientNavicella);
